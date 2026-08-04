@@ -63,6 +63,30 @@ export const SESSION_STORAGE_KEY = 'tt_session_v2';
 export const DRAFT_STORAGE_PREFIX = 'tt_draft_v2_';
 export const CLIENT_REF_KEY = 'tt_client_ref';
 
+// ---- Cash count redesign (Priority 9) --------------------------------------------
+// Australian coins/notes currently in circulation (1c/2c were withdrawn in
+// 1992 and are never legal tender to count) — the denomination calculator
+// sums quantity x value per row rather than asking for one lump amount, so
+// the counted total is derived, not manually added up by a human under
+// time pressure at end of shift.
+export const CASH_DENOMINATIONS = [
+  { key: 'c5', label: '5c', value: 0.05 },
+  { key: 'c10', label: '10c', value: 0.10 },
+  { key: 'c20', label: '20c', value: 0.20 },
+  { key: 'c50', label: '50c', value: 0.50 },
+  { key: 'd1', label: '$1', value: 1 },
+  { key: 'd2', label: '$2', value: 2 },
+  { key: 'd5', label: '$5', value: 5 },
+  { key: 'd10', label: '$10', value: 10 },
+  { key: 'd20', label: '$20', value: 20 },
+  { key: 'd50', label: '$50', value: 50 },
+  { key: 'd100', label: '$100', value: 100 },
+];
+export const CASH_SHIFTS = [
+  { key: 'open', label: 'Open (opening float)' },
+  { key: 'close', label: 'Close (end of day)' },
+];
+
 // ---- Error prevention / anomaly confirmation (Priority 5) -----------------------
 
 /**

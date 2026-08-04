@@ -179,6 +179,12 @@ textarea:focus-visible, a:focus-visible, [tabindex]:focus-visible {
 .tt-field label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--ink-soft); margin-bottom: 4px; }
 .tt-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--sp-3); margin-bottom: var(--sp-3); }
 
+/* ---- Cash count denomination calculator (Priority 9) ---------------------------- */
+.tt-cash-denom-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.tt-cash-denom-row label { display: block; font-size: 11px; font-weight: 600; color: var(--ink-soft); margin-bottom: 4px; }
+.tt-cash-denom-qty { min-width: 0; text-align: center; }
+.tt-cash-total-row { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 16px; padding: var(--sp-3) 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-bottom: var(--sp-3); }
+
 /* ---- Panels / cards ------------------------------------------------------------ */
 .tt-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: var(--sp-5); box-shadow: var(--shadow-sm); margin-bottom: var(--sp-4); }
 .tt-panel-title { font-weight: 600; font-size: 15px; margin-bottom: 2px; }

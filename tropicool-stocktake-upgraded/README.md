@@ -27,7 +27,7 @@ been deployed, and no production Supabase migration has been run.
 - [x] Phase 6 — Inventory model split + batch expiry
 - [x] Phase 7 — Ordering workflow
 - [x] Phase 8 — Reports + exports
-- [ ] Phase 9 — Cash count redesign
+- [x] Phase 9 — Cash count redesign
 - [ ] Phase 10 — Design system / accessibility pass
 - [ ] Phase 11 — Offline/PWA
 - [ ] Phase 12 — Final code-quality pass + full test suite + docs
@@ -73,7 +73,7 @@ tropicool-stocktake-upgraded/
     app.js                                   entry point, wires it all up
   supabase/
     migrations/               proposed SQL migrations (not run against production;
-                                 0001-0007 verified to apply cleanly against a
+                                 0001-0008 verified to apply cleanly against a
                                  throwaway local Postgres 16, see DATA_MODEL.md
                                  and AUTH_MODEL.md)
     functions/
@@ -394,6 +394,79 @@ opts)` — composes `brisbaneDateISO` + `formatBrisbaneDate` in one place —
 and `orders.js`'s local copy of the same fix was replaced with a call to
 it, with a new unit test (`tests/date.test.js`) covering the exact
 9am-Brisbane-is-still-yesterday-in-UTC case that motivates it.
+
+### Phase 9 — cash count redesign
+
+Replaces the original app's single `amount` field (no register, no shift,
+no breakdown, no approval, and a "today so far" total that combined every
+register/shift into one meaningless figure — the exact anti-pattern
+AUDIT.md §8 flagged) with a real register + shift + denomination
+calculator + expected-vs-counted variance + manager approval workflow, and
+a matching proposed migration (`0008_cash_counts.sql`).
+
+- **Denomination calculator**: the 11 Australian coins/notes currently in
+  circulation (5c–$100; 1c/2c were withdrawn in 1992 and were never
+  included), each with a quantity input. The counted total is derived
+  live from quantity × value per row, not typed as one lump number under
+  time pressure at the end of a shift.
+- **Register + shift**: shift is now a real required field (Open/Close),
+  not silently `null` as it was in the Phase 4 placeholder.
+- **Expected-vs-counted variance**: shown plainly, never absorbed or
+  hidden — a mismatch is a fact to review, not something the UI smooths
+  over.
+- **Manager approval**: any count can be approved once; the row shows
+  "Needs approval" until then. Enforced in both `database.js`
+  (`approveCashCount` checks the actor is actually a manager, not just
+  trusting a client-side flag) and the proposed RLS/trigger.
+- **Recounts are append-only**, same shape as `count_lines`: a recount
+  supersedes the previous current row for that register+shift+day rather
+  than overwriting its value, and always requires a reason — stricter
+  than `count_lines`, which only requires one when a *different* staff
+  member recounts. A cash correction is a standalone financial event
+  worth documenting either way, same-staff or not.
+- **A different staff member cannot override your count** — only you or a
+  manager can supersede a given register+shift+day entry. This is a
+  deliberate departure from `count_lines` (where any staff member can
+  recount any item, since staff regularly cover the same stocktake
+  session together): cash is a financial record, so overriding a
+  colleague's count is a manager action, not a peer one.
+- **History is manager-only**, closing AUDIT.md §7.3/§8's flagged
+  `canSeeCashHistory` fail-open bug (`role === 'manager' || role ===
+  null`, meaning any session without a role — including one that skipped
+  PIN entry — was treated as a manager). A staff member can still see
+  (and thus recount) their own submissions, just not anyone else's or the
+  general history.
+
+`0008_cash_counts.sql` was verified by hand against a scratch local
+Postgres 16 the same way Phase 3's and Phase 7's migrations were: a
+manager can insert/approve/view at their own store; a staff member can
+insert their own count and see it, but not a colleague's; a manager at a
+different store sees nothing; a non-manager attempting to set approval
+fields is rejected by a trigger, not just a policy; a monetary field can't
+be mutated directly (append-only); a second "current" row for the same
+register+shift+day is rejected by a partial unique index; and a proper
+recount (flip + insert) succeeds. One real design correction came out of
+this testing, not just confirmation: Postgres requires a row to remain
+visible under a table's SELECT policy for an UPDATE to reach it at all,
+which an initial manager-only SELECT policy silently broke (a staff
+member's own row became invisible to their own "flip is_current" update
+the moment it needed superseding) — fixed by scoping the staff clause to
+their own rows generally rather than only their currently-active one.
+
+Verified with 24 new Playwright checks: the denomination calculator's
+live total, saving with register/shift/expected/notes, variance display
+and the approve flow, the breakdown modal showing exactly what was
+entered, the full recount flow (conflict dialog, accessible reason prompt
+with no native `window.prompt`, empty-reason validation), rejecting a
+zero-total or missing-register save, a staff account never seeing history
+even after saving its own count, and a different staff member being
+blocked from overriding someone else's count with a message pointing at a
+manager (this last one required switching users via the app's real
+sign-out flow within a single page rather than two separate page loads —
+the mock's in-memory state resets on every full navigation, so two
+`newPage()` calls never actually shared data to collide over). All 24
+passing, plus a clean re-run of the Phase 4-8 Playwright suites and all
+25 unit tests.
 
 ## Running tests
 

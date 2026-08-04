@@ -12,7 +12,7 @@
 import { seedMockData } from './mock-data.js';
 import { verifyPin } from './pin-hash.js';
 import { brisbaneDateISO } from './date.js';
-import { validateSupplierUrl, ANOMALY_VARIANCE_PCT } from './config.js';
+import { validateSupplierUrl, ANOMALY_VARIANCE_PCT, CASH_DENOMINATIONS, CASH_SHIFTS } from './config.js';
 
 let state = null;
 let realtimeListeners = [];
@@ -678,21 +678,99 @@ export async function receiveOrder({ orderId, lines, actorId }) {
   return clone(order);
 }
 
-// ---- Cash counts -----------------------------------------------------------------
-export async function getCashCounts(storeId) {
-  return clone(state.cashCounts.filter((c) => c.storeId === storeId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+// ---- Cash counts (Priority 9: register/shift/denomination/approval redesign) ----
+// Append-only, same shape as count_lines: a recount flips the superseded
+// row's isCurrent rather than overwriting its value (0008_cash_counts.sql).
+// Never summed across registers/shifts in the UI into one "today so far"
+// figure -- that's the exact anti-pattern AUDIT.md §8 flagged in the
+// original app.
+function isManagerStaff(staffId) {
+  return state.staff.find((s) => s.id === staffId)?.role === 'manager';
 }
-export async function saveCashCount({ storeId, register, shift, expectedCash, countedCash, staffId, notes }) {
+
+function sumDenominations(denominations) {
+  return CASH_DENOMINATIONS.reduce((sum, d) => sum + (Number(denominations[d.key]) || 0) * d.value, 0);
+}
+
+export async function getCashCounts(storeId) {
+  return clone(
+    state.cashCounts.filter((c) => c.storeId === storeId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((c) => ({
+        ...c,
+        staffName: state.staff.find((s) => s.id === c.staffId)?.name || 'Unknown',
+        approverName: c.approvedBy ? (state.staff.find((s) => s.id === c.approvedBy)?.name || 'Unknown') : null,
+      })),
+  );
+}
+
+/**
+ * denominations: { [denomination key]: quantity }. countedCash is always
+ * derived from it here, never taken as a caller-supplied lump number, so
+ * the stored total can't drift from what was actually counted coin by
+ * coin/note by note.
+ *
+ * A recount is only allowed for the *same* staff member's own current
+ * entry (mirrors 0008's RLS: a staff member can't supersede a colleague's
+ * cash count, only a manager can) — and, unlike count_lines, always
+ * requires a reason, same-staff or not, since a cash correction is a
+ * standalone financial event worth documenting either way.
+ */
+export async function saveCashCount({ storeId, register, shift, expectedCash, denominations, staffId, notes, recountReason }) {
+  const reg = (register || '').trim();
+  if (!reg) throw new ValidationError('Register name is required.');
+  if (!CASH_SHIFTS.some((s) => s.key === shift)) throw new ValidationError('Choose a shift.');
+  const countedCash = Math.round(sumDenominations(denominations || {}) * 100) / 100;
+  if (countedCash <= 0) throw new ValidationError('Enter at least one denomination — the count can’t be zero.');
+  const expected = expectedCash === '' || expectedCash == null ? null : Number(expectedCash);
+  if (expected != null && (Number.isNaN(expected) || expected < 0)) throw new ValidationError('Expected amount must be zero or more.');
+
+  const businessDate = brisbaneDateISO();
+  const existing = state.cashCounts.find(
+    (c) => c.storeId === storeId && c.register === reg && c.shift === shift && c.countDate === businessDate && c.isCurrent,
+  );
+  if (existing) {
+    if (existing.staffId !== staffId && !isManagerStaff(staffId)) {
+      throw new ValidationError(`${reg} (${shift}) was already counted today by someone else. A manager needs to record the recount.`);
+    }
+    if (!String(recountReason || '').trim()) {
+      throw new ConflictError(`${reg} (${shift}) has already been counted today. Provide a reason to save a recount.`);
+    }
+  }
+  if (existing) existing.isCurrent = false;
+
   const c = {
-    id: uid('cash'), storeId, register, shift,
-    expectedCash: expectedCash === '' ? null : Number(expectedCash),
-    countedCash: Number(countedCash),
-    variance: expectedCash === '' ? null : Number(countedCash) - Number(expectedCash),
-    staffId, notes: notes || null,
+    id: uid('cash'), storeId, register: reg, shift,
+    countDate: businessDate,
+    denominations: { ...denominations },
+    countedCash,
+    expectedCash: expected,
+    notes: (notes || '').trim() || null,
+    staffId,
+    recountOfId: existing ? existing.id : null,
+    recountReason: existing ? recountReason.trim() : null,
+    isCurrent: true,
     approvedBy: null,
-    countDate: brisbaneDateISO(), createdAt: new Date().toISOString(),
+    approvedAt: null,
+    createdAt: new Date().toISOString(),
   };
   state.cashCounts.push(c);
+  recordAudit({
+    storeId, actorId: staffId, action: existing ? 'cash_count_recounted' : 'cash_count_saved',
+    entityType: 'cash_count', entityId: c.id, beforeState: existing ? { countedCash: existing.countedCash } : null, afterState: c,
+  });
+  notifyChange('cash_counts');
+  return clone(c);
+}
+
+export async function approveCashCount(cashCountId, actorId) {
+  const c = state.cashCounts.find((cc) => cc.id === cashCountId);
+  if (!c) throw new Error('Not found');
+  if (!isManagerStaff(actorId)) throw new ValidationError('Only a manager can approve a cash count.');
+  if (c.approvedBy) throw new ValidationError('This cash count is already approved.');
+  const before = clone(c);
+  c.approvedBy = actorId;
+  c.approvedAt = new Date().toISOString();
+  recordAudit({ storeId: c.storeId, actorId, action: 'cash_count_approved', entityType: 'cash_count', entityId: c.id, beforeState: before, afterState: c });
   notifyChange('cash_counts');
   return clone(c);
 }
