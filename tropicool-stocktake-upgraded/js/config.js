@@ -61,6 +61,7 @@ export function decimalsForUnit(unit) {
 export const EXPIRY_WARN_DAYS = 3;
 export const SESSION_STORAGE_KEY = 'tt_session_v2';
 export const DRAFT_STORAGE_PREFIX = 'tt_draft_v2_';
+export const CONFLICT_STORAGE_PREFIX = 'tt_conflicts_v1_';
 export const CLIENT_REF_KEY = 'tt_client_ref';
 
 // ---- Cash count redesign (Priority 9) --------------------------------------------

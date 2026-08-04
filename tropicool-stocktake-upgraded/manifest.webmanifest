@@ -6,5 +6,8 @@
   "background_color": "#FAF9FC",
   "theme_color": "#6C4BD6",
   "orientation": "portrait-primary",
-  "icons": []
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
 }

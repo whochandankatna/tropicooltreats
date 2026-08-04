@@ -23,7 +23,12 @@
   --warn-soft: rgba(180, 83, 9, 0.12);
   --success: #0B6B2F;
   --success-soft: rgba(22, 163, 74, 0.1);
-  --neutral: #6B7280;
+  /* Same fix as above, found while adding Phase 11's "queued offline" badge
+     (same soft-badge-background pattern as tt-status-badge.draft, which
+     had been using this value since Phase 7 without ever being exercised
+     by the Phase 10 axe scan — no draft order existed in the seed data at
+     scan time, so the violation was latent, not actually caught then). */
+  --neutral: #4B5563;
 
   --ink: #16151C;
   --ink-soft: #6B7280;
@@ -224,7 +229,10 @@ textarea:focus-visible, a:focus-visible, [tabindex]:focus-visible {
 .tt-progress-fill { height: 100%; background: #fff; border-radius: var(--radius-pill); }
 .tt-progress-track.mini .tt-progress-fill { background: var(--brand); }
 
-.tt-alert-banner { display: flex; align-items: center; gap: var(--sp-2); background: var(--warn-soft); color: var(--warn); border-radius: var(--radius-md); padding: var(--sp-3); font-size: 13px; margin-bottom: var(--sp-3); }
+.tt-alert-banner { display: flex; align-items: center; gap: var(--sp-2); background: var(--warn-soft); color: var(--warn); border-radius: var(--radius-md); padding: var(--sp-3); font-size: 13px; margin-bottom: var(--sp-3); width: 100%; text-align: left; border: none; }
+.tt-alert-banner.offline { background: rgba(75,85,99,0.14); color: var(--neutral); }
+.tt-alert-banner.conflict { background: var(--danger-soft); color: var(--danger); cursor: pointer; }
+.tt-alert-banner.conflict:hover { filter: brightness(0.97); }
 
 .tt-chip-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-3); margin-bottom: var(--sp-3); list-style: none; }
 .tt-chip-row > li { display: contents; } /* the <li> is only there for correct <ul> semantics -- the <button> inside is the actual grid item */
@@ -265,6 +273,8 @@ textarea:focus-visible, a:focus-visible, [tabindex]:focus-visible {
 .tt-count-card.tt-focused { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
 .tt-count-card.counted { border-color: var(--success); }
 .tt-count-card.unsynced { border-color: var(--warn); }
+.tt-count-card.queued { border-color: var(--neutral); }
+.tt-count-card.conflict { border-color: var(--danger); }
 .tt-count-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--sp-2); margin-bottom: var(--sp-3); }
 .tt-count-card-name { font-weight: 600; font-size: 14.5px; }
 .tt-count-card-sub { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
@@ -273,6 +283,8 @@ textarea:focus-visible, a:focus-visible, [tabindex]:focus-visible {
 .tt-count-state-badge { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; padding: 4px 9px; border-radius: var(--radius-pill); background: var(--bg); color: var(--ink-soft); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .tt-count-state-badge.counted { background: var(--success-soft); color: var(--success); }
 .tt-count-state-badge.unsynced { background: var(--warn-soft); color: var(--warn); }
+.tt-count-state-badge.queued { background: rgba(107,114,128,0.14); color: var(--neutral); }
+.tt-count-state-badge.conflict { background: var(--danger-soft); color: var(--danger); }
 
 .tt-variance-warning { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--warn); background: var(--warn-soft); border-radius: var(--radius-sm); padding: var(--sp-2) var(--sp-3); margin-bottom: var(--sp-3); }
 

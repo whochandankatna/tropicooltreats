@@ -29,7 +29,7 @@ been deployed, and no production Supabase migration has been run.
 - [x] Phase 8 — Reports + exports
 - [x] Phase 9 — Cash count redesign
 - [x] Phase 10 — Design system / accessibility pass
-- [ ] Phase 11 — Offline/PWA
+- [x] Phase 11 — Offline/PWA
 - [ ] Phase 12 — Final code-quality pass + full test suite + docs
 
 ## Layout
@@ -43,9 +43,13 @@ tropicool-stocktake-upgraded/
   css/app.css                design system: purple brand accent, semantic
                                 colours, 44px touch targets, dark mode,
                                 prefers-reduced-motion, safe-area/100dvh
-  manifest.webmanifest       minimal valid PWA manifest (no icons yet, no
-                                service worker registered — that's Phase 11;
-                                not claiming installability until it's real)
+  manifest.webmanifest       PWA manifest with real icons (icons/icon.svg,
+                                any + maskable) and a registered service
+                                worker (Phase 11)
+  service-worker.js         precaches the app shell so the app launches and
+                                is usable offline (see Phase 11 notes below)
+  icons/icon.svg              brand mark (purple gradient, "TT"), used as
+                                 the manifest/favicon/apple-touch icon
   js/
     date.js                 Australia/Brisbane business-date utilities —
                                now a plain ES module (was UMD in Phase 1;
@@ -70,6 +74,11 @@ tropicool-stocktake-upgraded/
                                           light — Priorities 7/8 expand these)
     items.js, staff.js, roster.js,       screens under More (Priority 3)
     cash.js, announcements.js, more.js
+    connectivity.js                           navigator.onLine + online/
+                                                 offline events, one shared
+                                                 source of truth (Phase 11)
+    pwa.js                                      service worker registration
+                                                    (Phase 11)
     app.js                                   entry point, wires it all up
   supabase/
     migrations/               proposed SQL migrations (not run against production;
@@ -82,7 +91,6 @@ tropicool-stocktake-upgraded/
                                     tested in tests/hash_and_jwt.test.mjs
       verify-staff-pin/          PIN check + rate limiting + session mint (not deployed)
       set-staff-pin/             manager-only PIN reset/role/lock (not deployed)
-  service-worker.js         not created yet — Phase 11
   tests/
     date.test.js               Brisbane date tests (16 passing)
     hash_and_jwt.test.mjs        PIN hashing + JWT signing/verification tests (8 passing)
@@ -554,6 +562,89 @@ README notes, not an accessibility issue, left for a future cleanup
 pass); and the Reports tabs don't implement arrow-key navigation (see
 above — the plain-button approach is fully accessible, just not the
 maximal APG pattern).
+
+### Phase 11 — offline / PWA
+
+This app has no real backend yet (`SUPABASE_URL` is blank — see
+`config.js`/`database.js`), so there's no live data to sync from a service
+worker. What "offline" means here is narrower and more honest than a full
+offline-first data sync: the app shell precaches so it still **launches and
+is fully usable offline**, and a real draft/queue/conflict layer on top of
+Phase 4's existing local-draft mechanism handles counting itself going
+offline mid-shift — which is the actual real-world scenario (a walk-in
+freezer with no signal), not a generic "PWA checklist" box-tick.
+
+- **Service worker** (`service-worker.js`) precaches the full app shell
+  (every `js/*.js` file, `css/app.css`, `index.html`, the manifest, the
+  icon) on install, serves cache-first with a network fallback that
+  refreshes the cache, and falls back to the cached shell for any
+  navigation it can't otherwise serve — so a full page reload while
+  offline still loads the app instead of the browser's own offline error
+  page. `CACHE_VERSION` is bumped whenever a precached file changes; the
+  activate handler deletes any previous version's cache.
+- **Real manifest icons**: an SVG brand mark (`icons/icon.svg` — purple
+  gradient, "TT", matching the existing splash/PIN-lock logo styling)
+  registered as both `any` and `maskable` purposes, replacing the empty
+  `"icons": []` from Phase 4. Also wired as the favicon and
+  `apple-touch-icon`. Known limitation: some older iOS Safari versions
+  don't accept SVG for `apple-touch-icon` (PNG is the traditional
+  expectation there) — flagging this rather than claiming full legacy iOS
+  parity, since generating real PNGs wasn't practical without an image
+  toolchain in this environment.
+- **Real online/offline detection** (`js/connectivity.js`): wraps
+  `navigator.onLine` + the `online`/`offline` browser events behind one
+  shared source of truth. The topbar's sync pill now genuinely reflects
+  connectivity (it was hardcoded to "Live" since Phase 4) instead of
+  always claiming to be live.
+- **Offline queue for counting**: entering a count while offline no longer
+  attempts to save — it queues (the existing Phase 4 local draft doubles
+  as the queue, no second structure needed) and the card shows "Queued
+  (offline)" rather than the misleading "Saving…". Reconnecting fires
+  `syncQueuedDrafts()` automatically, replaying every queued count; a
+  toast confirms how many synced.
+- **Conflict UI**: if a queued count turns out to conflict on replay
+  (someone else counted the same item while this device was offline), it
+  is never silently dropped or silently overwritten — it moves to a
+  "needs review" state with its own badge and a "Review & recount" button
+  that reuses the exact same confirm-and-reason flow Phase 5 already built
+  for live conflicts. The Review-before-submit screen also blocks
+  submission entirely while offline or while any conflict is unresolved
+  (a stocktake can't be submitted against not-yet-recorded server state).
+  Home's alert banners distinguish "N queued, will sync" from "N need
+  review" so the two situations don't get confused.
+- **A real bug found by testing the actual scenario, not just the happy
+  path**: the offline queue was originally keyed only by session (store +
+  day), not by staff. A session is shared across whoever's signed in, so
+  on a shared device (a counter tablet, which this app is explicitly
+  designed for) a second staff member live-saving the same item would
+  silently overwrite a first staff member's still-unsynced queued entry
+  in `localStorage` before it ever got a chance to sync — a real data-loss
+  bug. Found by testing the actual multi-staff-one-device offline scenario
+  end to end (queue offline as Alice, sign out, save live as Bob, sign
+  back in as Alice, reconnect) rather than only the single-user path.
+  Fixed by keying the draft/conflict storage by session **and** staff.
+
+Verified with 20 new Playwright checks: the manifest has real icons
+including a maskable one, the service worker registers and reaches
+`activated`, a full page reload while offline still renders the app
+(genuine `context.setOffline(true)` + reload, not a mock), the sync pill
+tracks real online/offline transitions, an offline count queues and then
+syncs on reconnect (with Home's banner reflecting both states correctly),
+the review screen blocks submission while offline, and the full
+multi-staff conflict scenario above resolves correctly end to end
+including reusing the existing confirm-dialog UI. All 20 passing, plus a
+clean re-run of the Phase 4-9 Playwright suites, a fresh axe-core scan
+(zero violations, confirming the new sync pill/banners/badges didn't
+regress accessibility), and all 25 unit tests.
+
+One bug in the test process itself is worth noting for anyone extending
+these scripts: `<script type="module">` runs after the DOM is parsed, so
+the page's own `load` event can already have fired by the time module code
+attaches a `window.addEventListener('load', ...)` — the service worker
+registration silently never fired until `pwa.js` was fixed to check
+`document.readyState === 'complete'` first. A real bug, caught by testing
+actual registration state rather than assuming `addEventListener('load',
+...)` always works from a deferred module context.
 
 ## Running tests
 

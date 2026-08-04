@@ -6,17 +6,24 @@
 import * as db from './database.js';
 import { getSession } from './auth.js';
 import { esc, icon, fmtQty, timeAgo, openModal, closeModal } from './ui.js';
-import { EXPIRY_WARN_DAYS, DRAFT_STORAGE_PREFIX } from './config.js';
+import { EXPIRY_WARN_DAYS, DRAFT_STORAGE_PREFIX, CONFLICT_STORAGE_PREFIX } from './config.js';
 import { formatBrisbaneDate } from './date.js';
 import { setActiveTab } from './nav.js';
+import { isOnline } from './connectivity.js';
 
 let detailsOpen = false;
 
-function countUnsyncedDrafts() {
+/** Counts individual queued items across all draft-prefixed keys, not just
+ * how many sessions happen to have a draft — a whole shift's worth of
+ * offline counts is one key but many items, and the banner should say so. */
+function countByPrefix(prefix) {
   let n = 0;
   try {
     for (let i = 0; i < localStorage.length; i++) {
-      if (localStorage.key(i)?.startsWith(DRAFT_STORAGE_PREFIX)) n++;
+      const key = localStorage.key(i);
+      if (key?.startsWith(prefix)) {
+        try { n += Object.keys(JSON.parse(localStorage.getItem(key) || '{}')).length; } catch { /* corrupt entry, skip */ }
+      }
     }
   } catch { /* ignore */ }
   return n;
@@ -33,7 +40,8 @@ export async function renderHome(root) {
   const expired = expiryAlerts.filter((a) => a.daysUntilExpiry < 0);
   const expiringSoon = expiryAlerts.filter((a) => a.daysUntilExpiry >= 0);
   const variances = await db.getLargestVariances(session.id, 3);
-  const unsynced = countUnsyncedDrafts();
+  const unsynced = countByPrefix(DRAFT_STORAGE_PREFIX);
+  const conflicted = countByPrefix(CONFLICT_STORAGE_PREFIX);
 
   const resumeLabel = session.status === 'draft' ? 'Start today’s stocktake' : 'Resume today’s stocktake';
 
@@ -53,9 +61,13 @@ export async function renderHome(root) {
         <button class="tt-btn tt-btn-hero" id="ttResumeBtn">${esc(resumeLabel)}</button>
       </section>
 
+      ${conflicted > 0 ? `
+      <button class="tt-alert-banner conflict" id="ttConflictBanner" type="button">
+        ${icon('alert', 16)} ${conflicted} count${conflicted === 1 ? '' : 's'} need review — counted by someone else while offline. Tap to resolve in Count.
+      </button>` : ''}
       ${unsynced > 0 ? `
-      <div class="tt-alert-banner" role="status">
-        ${icon('wifi', 16)} ${unsynced} unsynced change${unsynced === 1 ? '' : 's'} saved on this device — they'll sync once you're back online.
+      <div class="tt-alert-banner ${isOnline() ? '' : 'offline'}" role="status">
+        ${icon(isOnline() ? 'wifi' : 'wifiOff', 16)} ${unsynced} ${isOnline() ? 'unsynced change' : 'count'}${unsynced === 1 ? '' : 's'} ${isOnline() ? 'saved on this device — syncing shortly.' : 'queued on this device — will sync once you\'re back online.'}
       </div>` : ''}
 
       <ul class="tt-chip-row">
@@ -88,6 +100,7 @@ export async function renderHome(root) {
   `;
 
   root.querySelector('#ttResumeBtn').addEventListener('click', () => setActiveTab('count'));
+  root.querySelector('#ttConflictBanner')?.addEventListener('click', () => setActiveTab('count'));
   root.querySelector('#ttDetailsToggle').addEventListener('click', (e) => {
     detailsOpen = !detailsOpen;
     renderHome(root);

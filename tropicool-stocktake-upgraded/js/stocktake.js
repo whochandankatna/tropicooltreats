@@ -7,7 +7,8 @@
 import * as db from './database.js';
 import { getSession } from './auth.js';
 import { esc, icon, fmtQty, openModal, closeModal, toast, confirmDialog } from './ui.js';
-import { MAIN_CATEGORIES, CATEGORIES, stepForUnit, decimalsForUnit, hasInvalidDecimals, getAnomalyReasons, ANOMALY_VARIANCE_PCT, DRAFT_STORAGE_PREFIX } from './config.js';
+import { MAIN_CATEGORIES, CATEGORIES, stepForUnit, decimalsForUnit, hasInvalidDecimals, getAnomalyReasons, ANOMALY_VARIANCE_PCT, DRAFT_STORAGE_PREFIX, CONFLICT_STORAGE_PREFIX } from './config.js';
+import { isOnline } from './connectivity.js';
 
 let mainKey = null;
 let categoryKey = null;
@@ -17,7 +18,16 @@ let inventoryCache = [];
 let countLinesCache = [];
 let focusIndex = -1; // for Previous/Next stepping through the current filtered list
 
-function draftKey(sessionId) { return `${DRAFT_STORAGE_PREFIX}${sessionId}`; }
+// Keyed by session AND staff, not just session: a session is store+day, so
+// two different staff members signed in one after another *on the same
+// device* (a shared counter tablet is a real scenario, not just a test
+// contrivance) share a session id. Keying only by session id meant a
+// second staff member's live commit for the same item would silently
+// overwrite a first staff member's still-unsynced offline entry in
+// localStorage before it ever got a chance to sync — a real data-loss bug,
+// found by testing the actual multi-staff-on-one-device offline scenario
+// rather than just the single-user happy path.
+function draftKey(sessionId) { return `${DRAFT_STORAGE_PREFIX}${sessionId}_${getSession()?.staffId || 'anon'}`; }
 
 function readDraft(sessionId) {
   try { return JSON.parse(localStorage.getItem(draftKey(sessionId)) || '{}'); } catch { return {}; }
@@ -27,6 +37,71 @@ function writeDraft(sessionId, draft) {
     if (Object.keys(draft).length === 0) localStorage.removeItem(draftKey(sessionId));
     else localStorage.setItem(draftKey(sessionId), JSON.stringify(draft));
   } catch { /* storage unavailable — draft safety net just won't apply this session */ }
+}
+
+// ---- Offline queue + sync conflicts (Priority 11) --------------------------------
+// A draft entry IS the offline queue — no separate queue structure needed.
+// While offline, commit() writes the draft and stops there instead of
+// calling db.saveCountLine; syncQueuedDrafts() (called when the browser
+// fires 'online') walks the draft and replays each entry. Anything that
+// conflicts on replay (someone else counted it while this device was
+// offline) moves to a separate "needs review" store instead of being
+// silently dropped or endlessly auto-retried — see resolveConflict below.
+function conflictsKey(sessionId) { return `${CONFLICT_STORAGE_PREFIX}${sessionId}_${getSession()?.staffId || 'anon'}`; }
+function readConflicts(sessionId) {
+  try { return JSON.parse(localStorage.getItem(conflictsKey(sessionId)) || '{}'); } catch { return {}; }
+}
+function writeConflicts(sessionId, conflicts) {
+  try {
+    if (Object.keys(conflicts).length === 0) localStorage.removeItem(conflictsKey(sessionId));
+    else localStorage.setItem(conflictsKey(sessionId), JSON.stringify(conflicts));
+  } catch { /* storage unavailable */ }
+}
+
+/**
+ * Replays every queued (draft) count against the real store once back
+ * online. Never pops a confirmation dialog from here — this can run in
+ * the background while the user is on a completely different tab, so a
+ * surprise modal would be a worse experience than a quiet toast plus a
+ * "Needs review" badge the next time they're looking at the Count screen.
+ */
+export async function syncQueuedDrafts() {
+  if (!sessionCache || !isOnline()) return null;
+  const sess = getSession();
+  if (!sess) return null;
+  const draft = readDraft(sessionCache.id);
+  const conflicts = readConflicts(sessionCache.id);
+  const entries = Object.entries(draft);
+  if (!entries.length) return null;
+
+  let syncedCount = 0, newConflicts = 0;
+  for (const [invId, countedQty] of entries) {
+    const inv = inventoryCache.find((i) => i.id === invId);
+    if (!inv) { delete draft[invId]; continue; } // item archived/removed while offline
+    try {
+      await db.saveCountLine({
+        sessionId: sessionCache.id, storeInventoryId: invId,
+        systemQty: inv.currentStock, countedQty, unit: inv.unit, staffId: sess.staffId,
+      });
+      delete draft[invId];
+      syncedCount++;
+    } catch (e) {
+      if (e instanceof db.ConflictError) {
+        conflicts[invId] = { countedQty, message: e.message };
+        delete draft[invId]; // stop auto-retrying a count that's now known to conflict
+        newConflicts++;
+      }
+      // ValidationError here would mean a value valid when queued is invalid now,
+      // which shouldn't happen (validation rules don't change mid-session) --
+      // left in the draft rather than lost either way, so it's never silently discarded.
+    }
+  }
+  writeDraft(sessionCache.id, draft);
+  writeConflicts(sessionCache.id, conflicts);
+  countLinesCache = await db.getCountLines(sessionCache.id);
+  if (syncedCount) toast(`${syncedCount} queued count${syncedCount === 1 ? '' : 's'} synced`);
+  if (newConflicts) toast(`${newConflicts} count${newConflicts === 1 ? '' : 's'} need review — counted by someone else while offline`, { error: true, duration: 5000 });
+  return { syncedCount, newConflicts };
 }
 
 async function loadData(storeId) {
@@ -41,7 +116,21 @@ function currentLineFor(storeInventoryId) {
   return countLinesCache.find((cl) => cl.storeInventoryId === storeInventoryId);
 }
 
-function isCounted(inv) { return !!currentLineFor(inv.id); }
+/**
+ * Counted for review/submission purposes means the user has provided a
+ * value one way or another — a confirmed line, a not-yet-synced draft
+ * (queued offline or mid-save), or a value pending conflict review — not
+ * only a confirmed database row. Otherwise a shift's worth of counts
+ * queued while offline would wrongly show as "not counted" the moment the
+ * user opens the review screen before reconnecting.
+ */
+function isCounted(inv) {
+  if (currentLineFor(inv.id)) return true;
+  const draft = readDraft(sessionCache.id);
+  if (draft[inv.id] !== undefined) return true;
+  const conflicts = readConflicts(sessionCache.id);
+  return conflicts[inv.id] !== undefined;
+}
 
 function filteredList() {
   let list = inventoryCache;
@@ -171,11 +260,23 @@ function variancePct(inv, countedQty) {
 function cardHtml(inv, idx) {
   const line = currentLineFor(inv.id);
   const draft = readDraft(sessionCache.id);
+  const conflicts = readConflicts(sessionCache.id);
   const draftVal = draft[inv.id];
-  const counted = draftVal !== undefined ? draftVal : line?.countedQty;
+  const conflict = conflicts[inv.id];
+  const counted = conflict ? conflict.countedQty : draftVal !== undefined ? draftVal : line?.countedQty;
   const decimals = decimalsForUnit(inv.unit);
   const unusual = counted !== undefined && variancePct(inv, Number(counted)) > ANOMALY_VARIANCE_PCT;
-  const state = counted === undefined ? 'incomplete' : (draftVal !== undefined && !line) ? 'unsynced' : 'counted';
+  const state = conflict ? 'conflict'
+    : counted === undefined ? 'incomplete'
+    : (draftVal !== undefined && !line) ? (isOnline() ? 'unsynced' : 'queued')
+    : 'counted';
+  const badgeText = {
+    counted: `${icon('check', 13)} Counted`,
+    conflict: `${icon('alert', 13)} Needs review`,
+    queued: 'Queued (offline)',
+    unsynced: 'Saving…',
+    incomplete: 'Not counted',
+  }[state];
 
   return `<div class="tt-count-card ${state}" data-idx="${idx}" data-id="${inv.id}">
     <div class="tt-count-card-top">
@@ -183,9 +284,11 @@ function cardHtml(inv, idx) {
         <div class="tt-count-card-name">${esc(inv.item.name)}${inv.important ? ' <span class="tt-star" title="Important">&#9733;</span>' : ''}</div>
         <div class="tt-count-card-sub">${inv.storageLocation ? esc(inv.storageLocation) + ' · ' : ''}${esc(inv.unit)}${line ? ` · system ${fmtQty(inv.currentStock, decimals)}` : ''}</div>
       </div>
-      <div class="tt-count-state-badge ${state}">${state === 'counted' ? icon('check', 13) + ' Counted' : state === 'unsynced' ? 'Saving…' : 'Not counted'}</div>
+      <div class="tt-count-state-badge ${state}">${badgeText}</div>
     </div>
-    ${unusual ? `<div class="tt-variance-warning">${icon('alert', 14)} Big change from system quantity — double check before moving on.</div>` : ''}
+    ${conflict ? `<div class="tt-variance-warning">${icon('alert', 14)} ${esc(conflict.message)}</div>
+      <button class="tt-btn ghost" data-resolve="${inv.id}">Review &amp; recount</button>` : ''}
+    ${unusual && !conflict ? `<div class="tt-variance-warning">${icon('alert', 14)} Big change from system quantity — double check before moving on.</div>` : ''}
     <div class="tt-stepper-row">
       <button class="tt-stepper-btn" data-step="-1" aria-label="Decrease ${esc(inv.item.name)}">${icon('minus', 18)}</button>
       <input class="tt-qty-input" type="number" inputmode="decimal" step="${stepForUnit(inv.unit)}" min="0"
@@ -220,6 +323,28 @@ function bindCard(root, inv, idx, list) {
     commit(root, inv, currentVal(), list, idx);
   });
   card.addEventListener('focusin', () => { focusIndex = idx; });
+
+  card.querySelector('[data-resolve]')?.addEventListener('click', async () => {
+    const conflicts = readConflicts(sessionCache.id);
+    const pending = conflicts[inv.id];
+    if (!pending) return;
+    const proceed = await confirmDialog({
+      title: 'Someone already counted this',
+      body: esc(pending.message),
+      confirmLabel: 'Recount anyway', danger: true,
+    });
+    if (!proceed) return;
+    const reason = await promptRecountReason();
+    if (!reason) return;
+    const sess = getSession();
+    const ok = await attemptSave(root, inv, pending.countedQty, list, idx, sess, reason);
+    if (ok) {
+      const fresh = readConflicts(sessionCache.id);
+      delete fresh[inv.id];
+      writeConflicts(sessionCache.id, fresh);
+      toast('Recount saved');
+    }
+  });
 }
 
 /** Accessible replacement for window.prompt() — an in-modal reason field. */
@@ -257,6 +382,55 @@ function confirmAnomaly(reasons) {
   });
 }
 
+/**
+ * Actually calls db.saveCountLine and handles the outcome, including the
+ * conflict-confirm-recount round trip. Shared by a live commit() and by
+ * the "Review & recount" button on a card already flagged with a sync
+ * conflict — recountReason set means this call IS the resolution attempt,
+ * so a conflict here (a second, rarer collision) is surfaced plainly
+ * rather than looping into another confirm dialog.
+ */
+async function attemptSave(root, inv, countedQty, list, idx, sess, recountReason) {
+  try {
+    await db.saveCountLine({
+      sessionId: sessionCache.id, storeInventoryId: inv.id,
+      systemQty: inv.currentStock, countedQty, unit: inv.unit, staffId: sess.staffId,
+      recountReason,
+    });
+    countLinesCache = await db.getCountLines(sessionCache.id);
+    const draft = readDraft(sessionCache.id);
+    delete draft[inv.id];
+    writeDraft(sessionCache.id, draft);
+    refreshCardState(root, inv.id, list, idx, 'counted');
+    return true;
+  } catch (e) {
+    if (e instanceof db.ConflictError) {
+      if (recountReason !== undefined) {
+        toast('Still conflicting — try again', { error: true });
+        return false;
+      }
+      const proceed = await confirmDialog({
+        title: 'Someone already counted this',
+        body: `${esc(e.message)}`,
+        confirmLabel: 'Recount anyway', danger: true,
+      });
+      if (proceed) {
+        const reason = await promptRecountReason();
+        if (reason) {
+          const ok = await attemptSave(root, inv, countedQty, list, idx, sess, reason);
+          if (ok) toast('Recount saved');
+          return ok;
+        }
+      }
+      toast('Not saved — count left as a draft on this device', { error: true });
+      return false;
+    }
+    if (e instanceof db.ValidationError) { toast(e.message, { error: true }); return false; }
+    toast('Could not save — kept as an unsynced draft on this device', { error: true });
+    return false;
+  }
+}
+
 async function commit(root, inv, countedQty, list, idx) {
   if (countedQty === null || Number.isNaN(countedQty) || countedQty < 0) {
     toast('Enter a valid quantity', { error: true });
@@ -277,89 +451,90 @@ async function commit(root, inv, countedQty, list, idx) {
   const draft = readDraft(sessionCache.id);
   draft[inv.id] = countedQty;
   writeDraft(sessionCache.id, draft);
-  refreshCardState(root, inv.id, list, idx, 'unsynced');
+  // A fresh keystroke supersedes any stale pending conflict for this item —
+  // the user is actively re-entering it, so the old "needs review" state
+  // no longer applies to whatever they type next.
+  const conflicts = readConflicts(sessionCache.id);
+  if (conflicts[inv.id]) { delete conflicts[inv.id]; writeConflicts(sessionCache.id, conflicts); }
 
-  try {
-    await db.saveCountLine({
-      sessionId: sessionCache.id, storeInventoryId: inv.id,
-      systemQty: inv.currentStock, countedQty, unit: inv.unit, staffId: sess.staffId,
-    });
-    countLinesCache = await db.getCountLines(sessionCache.id);
-    delete draft[inv.id];
-    writeDraft(sessionCache.id, draft);
-    refreshCardState(root, inv.id, list, idx, 'counted');
-  } catch (e) {
-    if (e instanceof db.ConflictError) {
-      const proceed = await confirmDialog({
-        title: 'Someone already counted this',
-        body: `${esc(e.message)}`,
-        confirmLabel: 'Recount anyway', danger: true,
-      });
-      if (proceed) {
-        const reason = await promptRecountReason();
-        if (reason) {
-          await db.saveCountLine({
-            sessionId: sessionCache.id, storeInventoryId: inv.id,
-            systemQty: inv.currentStock, countedQty, unit: inv.unit, staffId: sess.staffId,
-            recountReason: reason,
-          });
-          countLinesCache = await db.getCountLines(sessionCache.id);
-          delete draft[inv.id];
-          writeDraft(sessionCache.id, draft);
-          refreshCardState(root, inv.id, list, idx, 'counted');
-          toast('Recount saved');
-          return;
-        }
-      }
-      toast('Not saved — count left as a draft on this device', { error: true });
-    } else if (e instanceof db.ValidationError) {
-      toast(e.message, { error: true });
-    } else {
-      toast('Could not save — kept as an unsynced draft on this device', { error: true });
-    }
+  if (!isOnline()) {
+    refreshCardState(root, inv.id, list, idx, 'queued');
+    toast('Offline — count queued, will sync once you’re back online');
+    return;
   }
+
+  refreshCardState(root, inv.id, list, idx, 'unsynced');
+  await attemptSave(root, inv, countedQty, list, idx, sess);
 }
+
+const STATE_BADGES = {
+  counted: () => `${icon('check', 13)} Counted`,
+  conflict: () => `${icon('alert', 13)} Needs review`,
+  queued: () => 'Queued (offline)',
+  unsynced: () => 'Saving…',
+  incomplete: () => 'Not counted',
+};
 
 function refreshCardState(root, invId, list, idx, forcedState) {
   const card = root.querySelector(`.tt-count-card[data-id="${invId}"]`);
   if (!card) return;
-  card.classList.remove('incomplete', 'unsynced', 'counted');
+  card.classList.remove('incomplete', 'unsynced', 'counted', 'queued', 'conflict');
   card.classList.add(forcedState);
   const badge = card.querySelector('.tt-count-state-badge');
   badge.className = `tt-count-state-badge ${forcedState}`;
-  badge.innerHTML = forcedState === 'counted' ? `${icon('check', 13)} Counted` : forcedState === 'unsynced' ? 'Saving…' : 'Not counted';
+  badge.innerHTML = STATE_BADGES[forcedState]();
+  const warning = card.querySelector('.tt-variance-warning');
+  const resolveBtn = card.querySelector('[data-resolve]');
+  if (forcedState !== 'conflict') { warning?.remove(); resolveBtn?.remove(); }
 }
 
 // ---- Review & submit ------------------------------------------------------------
 async function openReview(root) {
   const sess = getSession();
+  if (isOnline()) await syncQueuedDrafts(); // opportunistic: catch up before reviewing rather than leaving stale queued items
   countLinesCache = await db.getCountLines(sessionCache.id);
+  const conflicts = readConflicts(sessionCache.id);
+  const conflictedItems = Object.keys(conflicts).map((id) => inventoryCache.find((i) => i.id === id)).filter(Boolean);
+  const draft = readDraft(sessionCache.id);
+  const queuedCount = Object.keys(draft).length;
   const uncounted = inventoryCache.filter((i) => !isCounted(i));
   const unusual = countLinesCache
     .map((l) => ({ ...l, inv: inventoryCache.find((i) => i.id === l.storeInventoryId) }))
     .filter((l) => l.inv && variancePct(l.inv, l.countedQty) > ANOMALY_VARIANCE_PCT);
 
+  const blockedReason = !isOnline() ? 'You’re offline — reconnect to submit.'
+    : conflictedItems.length ? `Resolve ${conflictedItems.length} count${conflictedItems.length === 1 ? '' : 's'} that need review first.`
+    : queuedCount ? `${queuedCount} count${queuedCount === 1 ? '' : 's'} still syncing — try again in a moment.`
+    : null;
+
   const dialog = openModal(`
     <h2 id="tt-review-title" class="tt-modal-title">Review before submitting</h2>
     <p class="tt-modal-body">${countLinesCache.length} of ${inventoryCache.length} items counted.</p>
+    ${!isOnline() ? `<div class="tt-review-section"><div class="tt-review-section-title">${icon('alert', 14)} You're offline</div>
+      <p class="tt-modal-body">Counts are still saving to this device. Reconnect to sync and submit.</p>
+    </div>` : ''}
+    ${conflictedItems.length ? `<div class="tt-review-section"><div class="tt-review-section-title">${icon('alert', 14)} ${conflictedItems.length} count${conflictedItems.length === 1 ? '' : 's'} need review</div>
+      <div class="tt-list-rows">${conflictedItems.map((i) => `<div class="tt-list-row"><div class="tt-list-row-name">${esc(i.item.name)}</div></div>`).join('')}</div>
+      <p class="tt-modal-body">Someone else counted these while this device was offline. Go back to Count and use "Review &amp; recount" on each before submitting.</p>
+    </div>` : ''}
     ${uncounted.length ? `<div class="tt-review-section"><div class="tt-review-section-title">${icon('alert', 14)} ${uncounted.length} not counted yet</div>
       <div class="tt-list-rows">${uncounted.slice(0, 6).map((i) => `<div class="tt-list-row"><div class="tt-list-row-name">${esc(i.item.name)}</div></div>`).join('')}${uncounted.length > 6 ? `<div class="tt-list-row-sub">+${uncounted.length - 6} more</div>` : ''}</div>
     </div>` : ''}
     ${unusual.length ? `<div class="tt-review-section"><div class="tt-review-section-title">${icon('alert', 14)} ${unusual.length} unusual count${unusual.length === 1 ? '' : 's'} — worth a second look</div>
       <div class="tt-list-rows">${unusual.map((l) => `<div class="tt-list-row"><div><div class="tt-list-row-name">${esc(l.inv.item.name)}</div><div class="tt-list-row-sub">System ${fmtQty(l.systemQty)} → counted ${fmtQty(l.countedQty)} ${esc(l.unit)}</div></div></div>`).join('')}</div>
     </div>` : ''}
-    ${uncounted.length ? `<label class="tt-checkbox-row">
+    ${uncounted.length && !blockedReason ? `<label class="tt-checkbox-row">
       <input type="checkbox" id="ttAckIncomplete">
       <span>I understand ${uncounted.length} item${uncounted.length === 1 ? '' : 's'} will be submitted as not counted.</span>
     </label>` : ''}
     <div class="tt-modal-actions">
       <button class="tt-btn ghost" id="ttReviewCancel">Keep counting</button>
-      <button class="tt-btn" id="ttReviewSubmit" ${uncounted.length ? 'disabled' : ''}>Submit stocktake</button>
+      <button class="tt-btn" id="ttReviewSubmit" ${blockedReason || uncounted.length ? 'disabled' : ''}>Submit stocktake</button>
     </div>
   `, { labelledBy: 'tt-review-title' });
   dialog.querySelector('#ttReviewCancel').addEventListener('click', closeModal);
   const ackBox = dialog.querySelector('#ttAckIncomplete');
-  if (ackBox) ackBox.addEventListener('change', () => { dialog.querySelector('#ttReviewSubmit').disabled = !ackBox.checked; });
+  if (ackBox) ackBox.addEventListener('change', () => { dialog.querySelector('#ttReviewSubmit').disabled = blockedReason ? true : !ackBox.checked; });
   dialog.querySelector('#ttReviewSubmit').addEventListener('click', async () => {
     const btn = dialog.querySelector('#ttReviewSubmit');
     btn.disabled = true; btn.textContent = 'Submitting…';

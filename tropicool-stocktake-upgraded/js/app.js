@@ -8,10 +8,12 @@ import { STORES } from './config.js';
 import { TABS, getActiveTab, setActiveTab, onTabChange, renderBottomNav, renderSidebar, bindNav } from './nav.js';
 import { esc, icon } from './ui.js';
 import { renderHome } from './home.js';
-import { renderCount } from './stocktake.js';
+import { renderCount, syncQueuedDrafts } from './stocktake.js';
 import { renderOrders } from './orders.js';
 import { renderReports } from './reports.js';
 import { renderMore } from './more.js';
+import { isOnline, onConnectivityChange } from './connectivity.js';
+import { registerServiceWorker } from './pwa.js';
 
 const appRoot = document.getElementById('ttApp');
 let selectedStoreId = null;
@@ -23,6 +25,12 @@ async function boot() {
   onSessionChange(render);
   onTabChange(renderContentOnly);
   onChange(() => { if (getSession()) renderContentOnly(); });
+  onConnectivityChange(async (online) => {
+    updateSyncPill();
+    if (online && getSession()) await syncQueuedDrafts();
+    if (getSession()) renderContentOnly(); // refresh whichever tab is showing so offline/queued/conflict state reflects the change immediately
+  });
+  registerServiceWorker();
 }
 
 function render() {
@@ -62,7 +70,7 @@ function renderShell() {
         <header class="tt-topbar">
           <h1 class="tt-topbar-title">${esc(tabLabel())}</h1>
           <div class="tt-topbar-right">
-            <span class="tt-sync-pill live" role="status" aria-live="polite">${icon('wifi', 13)} <span id="ttSyncLabel">Live</span></span>
+            <span class="tt-sync-pill" id="ttSyncPill" role="status" aria-live="polite"></span>
           </div>
         </header>
         <main class="tt-content" id="ttContent" tabindex="-1"></main>
@@ -71,7 +79,17 @@ function renderShell() {
     </div>
   `;
   bindNav(appRoot, () => renderShell());
+  updateSyncPill();
   renderContentOnly();
+}
+
+function updateSyncPill() {
+  const pill = document.getElementById('ttSyncPill');
+  if (!pill) return;
+  const online = isOnline();
+  pill.classList.toggle('live', online);
+  pill.classList.toggle('offline', !online);
+  pill.innerHTML = `${icon(online ? 'wifi' : 'wifiOff', 13)} <span id="ttSyncLabel">${online ? 'Live' : 'Offline'}</span>`;
 }
 
 function tabLabel() {
