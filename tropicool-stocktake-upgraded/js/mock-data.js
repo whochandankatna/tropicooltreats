@@ -158,5 +158,6 @@ export async function seedMockData() {
       { id: uid('ann'), message: 'Freezer 2 door seal is loose again, logged with maintenance.', staffName: 'Bob Ferreira', createdAt: new Date(Date.now() - 3600e3 * 5).toISOString() },
     ],
     rosterShifts: [],
+    auditLog: [],
   };
 }

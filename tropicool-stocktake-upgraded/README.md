@@ -19,7 +19,11 @@ been deployed, and no production Supabase migration has been run.
       see `AUTH_MODEL.md`
 - [x] Phase 4 — Information architecture + mobile counting UI — real,
       running app (mock data backend), see "Running the app" below
-- [ ] Phase 5 — Error prevention / anomaly confirmation / archive-not-delete
+- [x] Phase 5 — Error prevention / anomaly confirmation — validation
+      (duplicate names, missing units, unsafe URLs, max/reorder ordering,
+      negative/decimal quantities) plus anomaly confirmation (large
+      variance, over max, unexpected zero) and an in-modal recount reason
+      replacing window.prompt
 - [ ] Phase 6 — Inventory model split + batch expiry
 - [ ] Phase 7 — Ordering workflow
 - [ ] Phase 8 — Reports + exports
@@ -153,13 +157,53 @@ contrast and semantic colours; the review-before-submit modal traps focus
 and closes on Escape; a manager sees Edit/Archive controls on Items that a
 staff account does not (real `isManager()` check, not a cosmetic hide).
 
-Not yet covered by automated browser tests (manually verified by code
-reading instead, flagged here rather than silently assumed): the
-multi-user recount-conflict prompt path in `stocktake.js` (it currently
-uses `window.prompt` for the recount reason, which Playwright can't drive
-without a dialog handler — worth replacing with an in-modal text field in
-a later pass anyway, both for testability and because a native `prompt()`
-is not screen-reader-ideal).
+### Phase 5 — error prevention + anomaly confirmation
+
+Adds, on top of Phase 4:
+
+- **Validation** (blocks saving outright): duplicate item names within a
+  store, missing/blank units, negative quantities, decimal precision finer
+  than a unit's step (e.g. `2.567` for a kg item that only counts to 0.1),
+  max level not above the reorder point, a supplier link with no supplier
+  name, and supplier URLs restricted to `http(s)://` — an explicit
+  `javascript:` or other scheme is rejected rather than silently prefixed.
+  Enforced in both `items.js` (fast UI feedback) and `database.js`
+  (`ValidationError`, mirroring the real migration's CHECK constraints) so
+  the rule holds even if a UI check is ever missed or bypassed.
+- **Anomaly confirmation** (lets it through, but only after an explicit
+  yes): counting well above the max level, an unexpectedly zero count
+  where the system expected stock, or a count that differs from the system
+  quantity by more than `ANOMALY_VARIANCE_PCT` (`config.js` — a stand-in
+  for the brief's "manager-defined threshold"; not yet configurable from
+  the UI, flagged rather than pretending it is). A same-item,
+  different-staff save without a reason is still treated as a hard
+  conflict (Phase 4), now resolved through an accessible in-modal reason
+  field instead of `window.prompt` — the gap flagged at the end of the
+  Phase 4 notes above is fixed.
+- **Incomplete-section acknowledgment**: the review-before-submit modal now
+  disables the Submit button until an explicit checkbox is ticked when any
+  items are still uncounted, instead of silently allowing submission.
+- **Undo after archive**: archiving now shows a toast with an "Undo"
+  action (`ui.js`'s `toast()` gained an optional action button for this),
+  in addition to the existing "Show archived" restore path.
+- **Audit trail**: `database.js` now records `item_added`/`item_edited`/
+  `item_archived`/`item_restored` events (actor, before/after state,
+  timestamp) to an in-memory audit log — no viewer UI yet, that's the
+  Reports area's Audit Log in Priority 8, but the data is being captured
+  from this phase on rather than retrofitted later.
+
+Verified with 20 new Playwright checks covering every validation and
+anomaly path above (duplicate names, missing units, unsafe protocols,
+max/reorder ordering, large-variance confirmation with both cancel and
+confirm outcomes, the in-modal recount flow including its own empty-reason
+validation, incomplete-section acknowledgment, and undo-after-archive), all
+passing, plus a full re-run of the Phase 4 breakpoint/interaction suite to
+confirm nothing regressed. One test bug caught along the way and fixed in
+product code, not just the test: a `javascript:` URL entered with no
+supplier name was rejected for the wrong reason (missing name, checked
+first) rather than the protocol — reordered `database.js`'s validation so
+unsafe-URL rejection is unconditional rather than only checked once a name
+is present.
 
 ## Running tests
 

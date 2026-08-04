@@ -7,7 +7,7 @@
 import * as db from './database.js';
 import { getSession } from './auth.js';
 import { esc, icon, fmtQty, openModal, closeModal, toast, confirmDialog } from './ui.js';
-import { MAIN_CATEGORIES, CATEGORIES, stepForUnit, decimalsForUnit, DRAFT_STORAGE_PREFIX } from './config.js';
+import { MAIN_CATEGORIES, CATEGORIES, stepForUnit, decimalsForUnit, hasInvalidDecimals, getAnomalyReasons, ANOMALY_VARIANCE_PCT, DRAFT_STORAGE_PREFIX } from './config.js';
 
 let mainKey = null;
 let categoryKey = null;
@@ -174,7 +174,7 @@ function cardHtml(inv, idx) {
   const draftVal = draft[inv.id];
   const counted = draftVal !== undefined ? draftVal : line?.countedQty;
   const decimals = decimalsForUnit(inv.unit);
-  const unusual = counted !== undefined && variancePct(inv, Number(counted)) > 0.5;
+  const unusual = counted !== undefined && variancePct(inv, Number(counted)) > ANOMALY_VARIANCE_PCT;
   const state = counted === undefined ? 'incomplete' : (draftVal !== undefined && !line) ? 'unsynced' : 'counted';
 
   return `<div class="tt-count-card ${state}" data-idx="${idx}" data-id="${inv.id}">
@@ -222,11 +222,57 @@ function bindCard(root, inv, idx, list) {
   card.addEventListener('focusin', () => { focusIndex = idx; });
 }
 
+/** Accessible replacement for window.prompt() — an in-modal reason field. */
+function promptRecountReason() {
+  return new Promise((resolve) => {
+    const dialog = openModal(`
+      <h2 id="tt-recount-title" class="tt-modal-title">Reason for recount</h2>
+      <p class="tt-modal-body">Required so the original count stays in the audit trail with an explanation for the change.</p>
+      <div class="tt-field"><label for="ttRecountReason" class="tt-sr-only">Reason</label>
+        <textarea class="tt-input" id="ttRecountReason" rows="2" placeholder="e.g. Miscounted first time, recounted with manager"></textarea></div>
+      <div class="tt-pin-error" id="ttRecountError" role="alert" aria-live="assertive"></div>
+      <div class="tt-modal-actions">
+        <button class="tt-btn ghost" data-action="cancel">Cancel</button>
+        <button class="tt-btn" data-action="confirm">Save recount</button>
+      </div>
+    `, { labelledBy: 'tt-recount-title', onClose: () => resolve(null) });
+    dialog.querySelector('[data-action="cancel"]').addEventListener('click', () => closeModal());
+    dialog.querySelector('[data-action="confirm"]').addEventListener('click', () => {
+      const val = dialog.querySelector('#ttRecountReason').value.trim();
+      if (!val) { dialog.querySelector('#ttRecountError').textContent = 'A reason is required to save a recount.'; return; }
+      const overlay = dialog.closest('.tt-modal-overlay');
+      if (overlay) overlay._onClose = null;
+      closeModal();
+      resolve(val);
+    });
+  });
+}
+
+/** Anomaly confirmation (Priority 5) — lets the count through, but only after an explicit yes. */
+function confirmAnomaly(reasons) {
+  return confirmDialog({
+    title: 'Double check this count',
+    body: `<ul class="tt-anomaly-list">${reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>`,
+    confirmLabel: 'Yes, that’s correct', cancelLabel: 'Let me fix it',
+  });
+}
+
 async function commit(root, inv, countedQty, list, idx) {
   if (countedQty === null || Number.isNaN(countedQty) || countedQty < 0) {
     toast('Enter a valid quantity', { error: true });
     return;
   }
+  if (hasInvalidDecimals(countedQty, inv.unit)) {
+    toast(`${esc(inv.unit)} is only counted to ${decimalsForUnit(inv.unit)} decimal place${decimalsForUnit(inv.unit) === 1 ? '' : 's'}`, { error: true });
+    return;
+  }
+
+  const anomalies = getAnomalyReasons(inv, countedQty);
+  if (anomalies.length) {
+    const proceed = await confirmAnomaly(anomalies);
+    if (!proceed) { toast('Not saved — update the count and try again', { error: true }); return; }
+  }
+
   const sess = getSession();
   const draft = readDraft(sessionCache.id);
   draft[inv.id] = countedQty;
@@ -246,16 +292,16 @@ async function commit(root, inv, countedQty, list, idx) {
     if (e instanceof db.ConflictError) {
       const proceed = await confirmDialog({
         title: 'Someone already counted this',
-        body: `${esc(e.message)} Enter your count again with a reason to record it as a recount.`,
+        body: `${esc(e.message)}`,
         confirmLabel: 'Recount anyway', danger: true,
       });
       if (proceed) {
-        const reason = window.prompt('Reason for recount (required):', '') || '';
-        if (reason.trim()) {
+        const reason = await promptRecountReason();
+        if (reason) {
           await db.saveCountLine({
             sessionId: sessionCache.id, storeInventoryId: inv.id,
             systemQty: inv.currentStock, countedQty, unit: inv.unit, staffId: sess.staffId,
-            recountReason: reason.trim(),
+            recountReason: reason,
           });
           countLinesCache = await db.getCountLines(sessionCache.id);
           delete draft[inv.id];
@@ -266,6 +312,8 @@ async function commit(root, inv, countedQty, list, idx) {
         }
       }
       toast('Not saved — count left as a draft on this device', { error: true });
+    } else if (e instanceof db.ValidationError) {
+      toast(e.message, { error: true });
     } else {
       toast('Could not save — kept as an unsynced draft on this device', { error: true });
     }
@@ -289,7 +337,7 @@ async function openReview(root) {
   const uncounted = inventoryCache.filter((i) => !isCounted(i));
   const unusual = countLinesCache
     .map((l) => ({ ...l, inv: inventoryCache.find((i) => i.id === l.storeInventoryId) }))
-    .filter((l) => l.inv && variancePct(l.inv, l.countedQty) > 0.5);
+    .filter((l) => l.inv && variancePct(l.inv, l.countedQty) > ANOMALY_VARIANCE_PCT);
 
   const dialog = openModal(`
     <h2 id="tt-review-title" class="tt-modal-title">Review before submitting</h2>
@@ -300,12 +348,18 @@ async function openReview(root) {
     ${unusual.length ? `<div class="tt-review-section"><div class="tt-review-section-title">${icon('alert', 14)} ${unusual.length} unusual count${unusual.length === 1 ? '' : 's'} — worth a second look</div>
       <div class="tt-list-rows">${unusual.map((l) => `<div class="tt-list-row"><div><div class="tt-list-row-name">${esc(l.inv.item.name)}</div><div class="tt-list-row-sub">System ${fmtQty(l.systemQty)} → counted ${fmtQty(l.countedQty)} ${esc(l.unit)}</div></div></div>`).join('')}</div>
     </div>` : ''}
+    ${uncounted.length ? `<label class="tt-checkbox-row">
+      <input type="checkbox" id="ttAckIncomplete">
+      <span>I understand ${uncounted.length} item${uncounted.length === 1 ? '' : 's'} will be submitted as not counted.</span>
+    </label>` : ''}
     <div class="tt-modal-actions">
       <button class="tt-btn ghost" id="ttReviewCancel">Keep counting</button>
-      <button class="tt-btn" id="ttReviewSubmit">Submit stocktake</button>
+      <button class="tt-btn" id="ttReviewSubmit" ${uncounted.length ? 'disabled' : ''}>Submit stocktake</button>
     </div>
   `, { labelledBy: 'tt-review-title' });
   dialog.querySelector('#ttReviewCancel').addEventListener('click', closeModal);
+  const ackBox = dialog.querySelector('#ttAckIncomplete');
+  if (ackBox) ackBox.addEventListener('change', () => { dialog.querySelector('#ttReviewSubmit').disabled = !ackBox.checked; });
   dialog.querySelector('#ttReviewSubmit').addEventListener('click', async () => {
     const btn = dialog.querySelector('#ttReviewSubmit');
     btn.disabled = true; btn.textContent = 'Submitting…';

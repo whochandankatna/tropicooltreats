@@ -10,6 +10,11 @@ export function esc(s) {
 
 let toastEl = null;
 let toastTimer = null;
+/**
+ * `opts.action` optionally renders a button inside the toast (e.g. "Undo")
+ * — `{ label, onClick }`. The toast still auto-dismisses on its own timer;
+ * the action is a bonus, not the only way to proceed.
+ */
 export function toast(msg, opts = {}) {
   if (!toastEl) {
     toastEl = document.createElement('div');
@@ -18,7 +23,15 @@ export function toast(msg, opts = {}) {
     toastEl.setAttribute('aria-live', 'polite');
     document.body.appendChild(toastEl);
   }
-  toastEl.textContent = msg;
+  toastEl.innerHTML = '';
+  toastEl.appendChild(document.createTextNode(msg));
+  if (opts.action) {
+    const btn = document.createElement('button');
+    btn.className = 'tt-toast-action';
+    btn.textContent = opts.action.label;
+    btn.addEventListener('click', () => { toastEl.classList.remove('show'); opts.action.onClick(); });
+    toastEl.appendChild(btn);
+  }
   toastEl.classList.toggle('error', !!opts.error);
   toastEl.classList.add('show');
   clearTimeout(toastTimer);

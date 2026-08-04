@@ -267,6 +267,9 @@ textarea:focus-visible, a:focus-visible, [tabindex]:focus-visible {
 
 .tt-review-section { margin: var(--sp-3) 0; }
 .tt-review-section-title { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; color: var(--warn); margin-bottom: var(--sp-2); }
+.tt-anomaly-list { padding-left: var(--sp-5); font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; }
+.tt-checkbox-row { display: flex; align-items: flex-start; gap: var(--sp-2); font-size: 13px; margin: var(--sp-3) 0; }
+.tt-checkbox-row input { width: 20px; height: 20px; flex-shrink: 0; margin-top: 1px; accent-color: var(--brand); }
 
 /* ---- Lists (shared) -------------------------------------------------------------- */
 .tt-list-rows { display: flex; flex-direction: column; gap: var(--sp-2); }
@@ -308,7 +311,8 @@ textarea:focus-visible, a:focus-visible, [tabindex]:focus-visible {
 .tt-modal-actions .tt-btn { flex: 1; min-width: 120px; }
 
 /* ---- Toast (aria-live handled in ui.js) --------------------------------------------- */
-.tt-toast { position: fixed; bottom: calc(80px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(8px); background: var(--ink); color: var(--bg); padding: var(--sp-3) var(--sp-5); border-radius: var(--radius-md); font-size: 13px; opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease; z-index: 999; max-width: 90vw; text-align: center; }
+.tt-toast { position: fixed; bottom: calc(80px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(8px); background: var(--ink); color: var(--bg); padding: var(--sp-3) var(--sp-5); border-radius: var(--radius-md); font-size: 13px; opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease; z-index: 999; max-width: 90vw; display: flex; align-items: center; gap: var(--sp-3); }
+.tt-toast-action { background: none; border: none; color: inherit; font-weight: 700; text-decoration: underline; min-height: auto; padding: 4px; flex-shrink: 0; }
 .tt-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .tt-toast.error { background: var(--danger); color: #fff; }
 

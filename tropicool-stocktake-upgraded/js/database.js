@@ -12,9 +12,35 @@
 import { seedMockData } from './mock-data.js';
 import { verifyPin } from './pin-hash.js';
 import { brisbaneDateISO } from './date.js';
+import { validateSupplierUrl, ANOMALY_VARIANCE_PCT } from './config.js';
 
 let state = null;
 let realtimeListeners = [];
+
+/**
+ * Thrown for anything a client-side form bug (or a hand-crafted request,
+ * once this is real) could otherwise slip past — mirrors the CHECK
+ * constraints already written into 0001_stores_item_master_inventory.sql,
+ * so the same rules are enforced here even if a UI validation is ever
+ * missed or bypassed. Error-prevention belongs at this layer, not only in
+ * the form (Priority 5).
+ */
+export class ValidationError extends Error {}
+
+function recordAudit({ storeId, actorId, action, entityType, entityId, beforeState, afterState }) {
+  state.auditLog.push({
+    id: uid('audit'), storeId, actorId, action, entityType, entityId,
+    beforeState: beforeState ?? null, afterState: afterState ?? null,
+    occurredAt: new Date().toISOString(),
+  });
+}
+export async function getAuditLog(storeId, limit = 50) {
+  return clone(
+    state.auditLog.filter((a) => !storeId || a.storeId === storeId)
+      .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
+      .slice(0, limit),
+  );
+}
 
 export async function initDatabase() {
   state = await seedMockData();
@@ -45,35 +71,98 @@ export async function getBatchesFor(storeInventoryId) {
   return clone(state.batches.filter((b) => b.storeInventoryId === storeInventoryId && b.status === 'active'));
 }
 
-export async function addItem({ storeId, name, categoryKey, unit, currentStock, reorderPoint, maxStock, important, criticalItem }) {
-  const item = { id: uid('item'), name, categoryKey, defaultUnit: unit, criticalItem: !!criticalItem, archived: false };
+/**
+ * Shared validation for anything that creates/edits a store_inventory row.
+ * Mirrors the migration's CHECK constraints (max > reorder point) plus the
+ * checks that can't be expressed as a single-row CHECK constraint
+ * (duplicate name within the store — that needs a sibling-row lookup).
+ * `excludeInventoryId` lets an edit exclude itself from the duplicate check.
+ */
+function validateInventoryInput({ storeId, name, unit, currentStock, reorderPoint, maxStock, supplierName, supplierUrl, excludeInventoryId }) {
+  if (name !== undefined) {
+    const trimmed = String(name).trim();
+    if (!trimmed) throw new ValidationError('Give the item a name.');
+    const dup = state.storeInventory.some((si) =>
+      si.storeId === storeId && si.active && si.id !== excludeInventoryId
+      && state.items.find((i) => i.id === si.itemId)?.name.trim().toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (dup) throw new ValidationError(`"${trimmed}" is already an item at this store.`);
+  }
+  if (unit !== undefined && !String(unit).trim()) {
+    throw new ValidationError('Choose a unit (e.g. kg, tubs, boxes) — it drives count increments and can’t be blank.');
+  }
+  if (currentStock !== undefined && (Number.isNaN(Number(currentStock)) || Number(currentStock) < 0)) {
+    throw new ValidationError('On-hand quantity can’t be negative.');
+  }
+  if (reorderPoint !== undefined && (Number.isNaN(Number(reorderPoint)) || Number(reorderPoint) < 0)) {
+    throw new ValidationError('Reorder point can’t be negative.');
+  }
+  const maxNum = maxStock === '' || maxStock == null ? null : Number(maxStock);
+  if (maxNum !== null) {
+    if (Number.isNaN(maxNum) || maxNum < 0) throw new ValidationError('Max level can’t be negative.');
+    const reorderNum = Number(reorderPoint) || 0;
+    if (maxNum <= reorderNum) throw new ValidationError('Max level must be above the reorder point.');
+  }
+  // URL safety is checked unconditionally, before the softer "pair it with
+  // a name" business rule below — an unsafe protocol is worth rejecting on
+  // its own regardless of whether a supplier name happens to be filled in.
+  let normalizedUrl;
+  if (supplierUrl !== undefined) {
+    const result = validateSupplierUrl(supplierUrl);
+    if (!result.ok) throw new ValidationError(result.error);
+    normalizedUrl = result.url;
+  }
+  if (supplierUrl !== undefined && supplierUrl !== '' && !String(supplierName || '').trim()) {
+    throw new ValidationError('Add a supplier name to go with that link — an empty name next to a live link is confusing at order time.');
+  }
+  return { normalizedUrl };
+}
+
+export async function addItem({ storeId, actorId, name, categoryKey, unit, currentStock, reorderPoint, maxStock, supplierName, supplierUrl, important, criticalItem }) {
+  const { normalizedUrl } = validateInventoryInput({ storeId, name, unit, currentStock, reorderPoint, maxStock, supplierName, supplierUrl });
+  const item = { id: uid('item'), name: name.trim(), categoryKey, defaultUnit: unit, criticalItem: !!criticalItem, archived: false };
   state.items.push(item);
   const inv = {
     id: uid('inv'), storeId, itemId: item.id, storageArea: '', storageLocation: '',
     unit, currentStock: Number(currentStock) || 0, reorderPoint: Number(reorderPoint) || 0,
     lowWarningAt: Math.round((Number(reorderPoint) || 0) * 1.4 * 10) / 10,
     targetStock: null, maxStock: maxStock === '' || maxStock == null ? null : Number(maxStock),
-    supplierName: '', supplierUrl: '', important: !!important, active: true,
+    supplierName: (supplierName || '').trim(), supplierUrl: normalizedUrl || '', important: !!important, active: true,
   };
   state.storeInventory.push(inv);
+  recordAudit({ storeId, actorId, action: 'item_added', entityType: 'store_inventory', entityId: inv.id, afterState: inv });
   notifyChange('store_inventory');
   return clone({ ...inv, item });
 }
 
-export async function updateStoreInventory(id, patch) {
+export async function updateStoreInventory(id, patch, actorId) {
   const inv = state.storeInventory.find((si) => si.id === id);
   if (!inv) throw new Error('Not found');
+  const { normalizedUrl } = validateInventoryInput({
+    storeId: inv.storeId, excludeInventoryId: id,
+    unit: patch.unit !== undefined ? patch.unit : inv.unit,
+    currentStock: patch.currentStock !== undefined ? patch.currentStock : inv.currentStock,
+    reorderPoint: patch.reorderPoint !== undefined ? patch.reorderPoint : inv.reorderPoint,
+    maxStock: patch.maxStock !== undefined ? patch.maxStock : inv.maxStock,
+    supplierName: patch.supplierName !== undefined ? patch.supplierName : inv.supplierName,
+    supplierUrl: patch.supplierUrl !== undefined ? patch.supplierUrl : inv.supplierUrl,
+  });
+  const before = clone(inv);
   Object.assign(inv, patch);
+  if (normalizedUrl !== undefined) inv.supplierUrl = normalizedUrl;
+  recordAudit({ storeId: inv.storeId, actorId, action: 'item_edited', entityType: 'store_inventory', entityId: inv.id, beforeState: before, afterState: inv });
   notifyChange('store_inventory');
   return clone(inv);
 }
 
-export async function archiveItem(storeInventoryId, reason) {
+export async function archiveItem(storeInventoryId, reason, actorId) {
   const inv = state.storeInventory.find((si) => si.id === storeInventoryId);
   if (!inv) throw new Error('Not found');
+  const before = clone(inv);
   inv.active = false;
   inv.archivedReason = reason || null;
   inv.archivedAt = new Date().toISOString();
+  recordAudit({ storeId: inv.storeId, actorId, action: 'item_archived', entityType: 'store_inventory', entityId: inv.id, beforeState: before, afterState: inv });
   notifyChange('store_inventory');
   return clone(inv);
 }
@@ -86,12 +175,14 @@ export async function getArchivedInventory(storeId) {
   );
 }
 
-export async function unarchiveItem(storeInventoryId) {
+export async function unarchiveItem(storeInventoryId, actorId) {
   const inv = state.storeInventory.find((si) => si.id === storeInventoryId);
   if (!inv) throw new Error('Not found');
+  const before = clone(inv);
   inv.active = true;
   inv.archivedReason = null;
   inv.archivedAt = null;
+  recordAudit({ storeId: inv.storeId, actorId, action: 'item_restored', entityType: 'store_inventory', entityId: inv.id, beforeState: before, afterState: inv });
   notifyChange('store_inventory');
   return clone(inv);
 }
@@ -183,6 +274,9 @@ export async function getCountLines(sessionId) {
  * the real interface, not a simplified one).
  */
 export async function saveCountLine({ sessionId, storeInventoryId, systemQty, countedQty, unit, staffId, recountReason }) {
+  if (Number.isNaN(Number(countedQty)) || Number(countedQty) < 0) {
+    throw new ValidationError('Enter a valid, non-negative quantity.');
+  }
   const existing = state.countLines.find(
     (cl) => cl.sessionId === sessionId && cl.storeInventoryId === storeInventoryId && cl.isCurrent,
   );
