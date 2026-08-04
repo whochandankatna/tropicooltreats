@@ -4,7 +4,7 @@
  * the original's single 12-column table at every width (Priority 4).
  * Deletion is replaced with archive + reason + undo (Priority 5), and every
  * add/edit is validated both here (fast feedback) and in database.js
- * (defense in depth — see ValidationError there).
+ * (defence in depth — see ValidationError there).
  *
  * Priority 6: exposes the full item_master/store_inventory split — supplier
  * item code, unit cost, target stock, lead time, safety-stock days, order
@@ -36,7 +36,7 @@ export async function renderItems(root, storeId) {
     <div class="tt-item-cards">
       ${filtered.map((i) => itemCardHtml(i, batchesByInv[i.id])).join('') || '<div class="tt-empty">No items match.</div>'}
     </div>
-    ${showArchived ? `<div class="tt-panel-title" style="margin-top:16px;">Archived</div>
+    ${showArchived ? `<h2 class="tt-panel-title" style="margin-top:16px;">Archived</h2>
       <div class="tt-item-cards">${archived.map((i) => archivedCardHtml(i)).join('') || '<div class="tt-empty">Nothing archived.</div>'}</div>` : ''}
   `;
 

@@ -58,12 +58,12 @@ export async function renderHome(root) {
         ${icon('wifi', 16)} ${unsynced} unsynced change${unsynced === 1 ? '' : 's'} saved on this device — they'll sync once you're back online.
       </div>` : ''}
 
-      <div class="tt-chip-row" role="list">
+      <ul class="tt-chip-row">
         ${chip('reorder', 'Needs order', reorderList.length, 'alert')}
         ${chip('expired', 'Expired', expired.length, 'alert')}
         ${chip('expiring', 'Expiring soon', expiringSoon.length, 'warn')}
         ${chip('variance', 'Large variances', variances.filter((v) => Math.abs(v.variance) > 0).length, 'warn')}
-      </div>
+      </ul>
 
       <button class="tt-details-toggle" id="ttDetailsToggle" aria-expanded="${detailsOpen}">
         ${detailsOpen ? 'Hide details' : 'View details'}
@@ -72,7 +72,7 @@ export async function renderHome(root) {
 
       <div class="tt-details ${detailsOpen ? 'open' : ''}">
         <div class="tt-panel">
-          <div class="tt-panel-title">This stocktake</div>
+          <h2 class="tt-panel-title">This stocktake</h2>
           <dl class="tt-detail-list">
             <div><dt>Started by</dt><dd>${esc(staffNameOf(session.startedBy))}</dd></div>
             <div><dt>Status</dt><dd>${esc(session.status)}</dd></div>
@@ -80,7 +80,7 @@ export async function renderHome(root) {
         </div>
         ${variances.length ? `
         <div class="tt-panel">
-          <div class="tt-panel-title">Largest variances so far</div>
+          <h2 class="tt-panel-title">Largest variances so far</h2>
           ${variances.map((v) => `<div class="tt-list-row"><span>${esc(itemNameOf(v.storeInventoryId))}</span><span class="${v.variance < 0 ? 'neg' : v.variance > 0 ? 'pos' : ''}">${v.variance > 0 ? '+' : ''}${fmtQty(v.variance, 1)} ${esc(v.unit)}</span></div>`).join('')}
         </div>` : ''}
       </div>
@@ -105,10 +105,10 @@ export async function renderHome(root) {
 }
 
 function chip(key, label, count, tone) {
-  return `<button class="tt-chip ${tone} ${count === 0 ? 'zero' : ''}" data-filter="${key}" role="listitem">
+  return `<li><button class="tt-chip ${tone} ${count === 0 ? 'zero' : ''}" data-filter="${key}">
     <span class="tt-chip-count">${count}</span>
     <span class="tt-chip-label">${esc(label)}</span>
-  </button>`;
+  </button></li>`;
 }
 
 function openFilterModal(filter, data) {

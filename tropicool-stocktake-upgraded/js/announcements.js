@@ -7,7 +7,7 @@ export async function renderAnnouncements(root, storeId) {
   const items = await db.getAnnouncements(storeId);
   root.innerHTML = `
     <div class="tt-panel">
-      <div class="tt-panel-title">Team board</div>
+      <h2 class="tt-panel-title">Team board</h2>
       <div class="tt-field"><label class="tt-sr-only" for="ttAnnounceText">Post something everyone should see</label>
         <textarea class="tt-input" id="ttAnnounceText" rows="2" placeholder="Post something everyone should see..."></textarea></div>
       <div class="tt-actions-row"><button class="tt-btn" id="ttPostAnnounce">Post</button></div>

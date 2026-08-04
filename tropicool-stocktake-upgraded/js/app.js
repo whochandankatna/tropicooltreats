@@ -34,32 +34,33 @@ function render() {
 function renderStorePickerOrLock() {
   if (!selectedStoreId) {
     appRoot.innerHTML = `
-      <div class="tt-storepicker">
+      <main class="tt-storepicker">
         <div class="tt-splash-logo">TT</div>
-        <div class="tt-storepicker-title">Tropicool Treats</div>
+        <h1 class="tt-storepicker-title">Tropicool Treats</h1>
         <div class="tt-storepicker-sub">Choose your store</div>
         <div class="tt-storepicker-list">
           ${STORES.map((s) => `<button class="tt-storepicker-btn" data-store="${s.id}">${esc(s.name)}</button>`).join('')}
         </div>
-      </div>`;
+      </main>`;
     appRoot.querySelectorAll('[data-store]').forEach((btn) => btn.addEventListener('click', () => {
       selectedStoreId = btn.dataset.store;
       render();
     }));
     return;
   }
-  appRoot.innerHTML = `<div id="ttPinLockRoot"></div>`;
+  appRoot.innerHTML = `<main id="ttPinLockRoot"></main>`;
   renderPinLock(document.getElementById('ttPinLockRoot'), selectedStoreId);
 }
 
 function renderShell() {
   const session = getSession();
   appRoot.innerHTML = `
+    <a class="tt-skip-link" href="#ttContent">Skip to content</a>
     <div class="tt-app-shell">
       ${renderSidebar()}
       <div class="tt-main-col">
         <header class="tt-topbar">
-          <div class="tt-topbar-title">${esc(tabLabel())}</div>
+          <h1 class="tt-topbar-title">${esc(tabLabel())}</h1>
           <div class="tt-topbar-right">
             <span class="tt-sync-pill live" role="status" aria-live="polite">${icon('wifi', 13)} <span id="ttSyncLabel">Live</span></span>
           </div>

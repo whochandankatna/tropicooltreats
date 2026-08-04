@@ -37,9 +37,9 @@ export async function renderReports(root) {
 
   root.innerHTML = `
     <div class="tt-report-picker" role="tablist" aria-label="Choose a report">
-      ${visibleReports.map((r) => `<button class="tt-report-tab ${r.key === activeReport ? 'active' : ''}" data-report="${r.key}" role="tab" aria-selected="${r.key === activeReport}">${esc(r.label)}</button>`).join('')}
+      ${visibleReports.map((r) => `<button class="tt-report-tab ${r.key === activeReport ? 'active' : ''}" data-report="${r.key}" role="tab" id="tt-report-tab-${r.key}" aria-selected="${r.key === activeReport}" aria-controls="ttReportBody">${esc(r.label)}</button>`).join('')}
     </div>
-    <div id="ttReportBody"></div>
+    <div id="ttReportBody" role="tabpanel" aria-labelledby="tt-report-tab-${activeReport}"></div>
   `;
   root.querySelectorAll('[data-report]').forEach((btn) => btn.addEventListener('click', () => {
     activeReport = btn.dataset.report;
@@ -85,7 +85,7 @@ async function renderStocktakeReport(body, sess) {
 
   body.innerHTML = `
     <div class="tt-panel">
-      <div class="tt-panel-title">Today's stocktake — ${esc(formatBrisbaneDate(session.businessDate))}</div>
+      <h2 class="tt-panel-title">Today's stocktake — ${esc(formatBrisbaneDate(session.businessDate))}</h2>
       <div class="tt-panel-sub">${lines.length} of ${inventory.length} items counted · status: ${esc(session.status)}</div>
       ${rows.length ? `
       <div class="tt-report-table-wrap">
@@ -122,7 +122,7 @@ async function renderStaffReport(body, sess) {
 
   body.innerHTML = `
     <div class="tt-panel">
-      <div class="tt-panel-title">Staff completion — ${esc(formatBrisbaneDate(session.businessDate))}</div>
+      <h2 class="tt-panel-title">Staff completion — ${esc(formatBrisbaneDate(session.businessDate))}</h2>
       <div class="tt-panel-sub">${totalItems} items in this store's count</div>
       ${rows.length ? `
       <div class="tt-report-table-wrap">
@@ -158,7 +158,7 @@ async function renderWasteReport(body, sess) {
 
   body.innerHTML = `
     <div class="tt-panel">
-      <div class="tt-panel-title">Waste — last 30 days</div>
+      <h2 class="tt-panel-title">Waste — last 30 days</h2>
       <div class="tt-panel-sub">${rows.length} record${rows.length === 1 ? '' : 's'} · estimated cost $${totalCost.toFixed(2)}${missingCost ? ` (${missingCost} with no unit cost on file, not included)` : ''}</div>
       ${rows.length ? `
       <div class="tt-report-table-wrap">
@@ -195,7 +195,7 @@ async function renderExpiryReport(body, sess) {
 
   body.innerHTML = `
     <div class="tt-panel">
-      <div class="tt-panel-title">Expiry — next 14 days</div>
+      <h2 class="tt-panel-title">Expiry — next 14 days</h2>
       <div class="tt-panel-sub">${alerts.length} batch${alerts.length === 1 ? '' : 'es'} expired or expiring soon</div>
       ${alerts.length ? `
       <div class="tt-report-table-wrap">
@@ -231,7 +231,7 @@ async function renderValuationReport(body, sess) {
 
   body.innerHTML = `
     <div class="tt-panel">
-      <div class="tt-panel-title">Stock valuation</div>
+      <h2 class="tt-panel-title">Stock valuation</h2>
       <div class="tt-panel-sub">Total on hand: $${total.toFixed(2)}${missingCostCount ? ` · ${missingCostCount} item${missingCostCount === 1 ? '' : 's'} with no unit cost on file (excluded from the total, not counted as $0)` : ''}</div>
       ${rows.length ? Object.entries(byCategory).map(([key, items]) => {
         const subtotal = items.reduce((sum, r) => sum + (r.value ?? 0), 0);
@@ -267,7 +267,7 @@ async function renderOrdersReport(body, sess) {
 
   body.innerHTML = `
     <div class="tt-panel">
-      <div class="tt-panel-title">Orders</div>
+      <h2 class="tt-panel-title">Orders</h2>
       <div class="tt-panel-sub">${orders.length} order${orders.length === 1 ? '' : 's'} total</div>
       ${orders.length ? `
       <div class="tt-report-table-wrap">
@@ -301,7 +301,7 @@ async function renderAuditReport(body, sess) {
 
   body.innerHTML = `
     <div class="tt-panel">
-      <div class="tt-panel-title">Audit log</div>
+      <h2 class="tt-panel-title">Audit log</h2>
       <div class="tt-panel-sub">Most recent ${entries.length} action${entries.length === 1 ? '' : 's'} at this store</div>
       ${entries.length ? `
       <div class="tt-report-table-wrap">

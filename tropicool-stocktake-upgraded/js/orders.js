@@ -28,7 +28,7 @@ export async function renderOrders(root) {
 
   root.innerHTML = `
     <div class="tt-order-header">
-      <div class="tt-panel-title">Needs ordering today · ${reorderList.length}</div>
+      <h2 class="tt-panel-title">Needs ordering today · ${reorderList.length}</h2>
       ${reorderList.length ? `<button class="tt-btn ghost" id="ttCopyOrder">Copy list</button>` : ''}
     </div>
     ${!reorderList.length ? `<div class="tt-panel"><div class="tt-empty"><b>Nothing needs ordering</b>Every item is above its reorder point right now.</div></div>` : ''}
@@ -42,11 +42,11 @@ export async function renderOrders(root) {
             <div class="tt-order-line-sub">${fmtQty(i.currentStock, decimalsForUnit(i.unit))} ${esc(i.unit)} on hand · reorder point ${fmtQty(i.reorderPoint, decimalsForUnit(i.unit))}${i.leadTimeDays != null ? ` · ${i.leadTimeDays}d lead time` : ''}${i.safetyStockDays != null ? ` · ${i.safetyStockDays}d safety stock` : ''}</div>
           </div>
           ${isManager() ? `<input class="tt-input tt-order-line-qty" type="number" min="0" step="0.01" data-qty="${i.id}" value="${selected[i.id] ?? i.suggestedQty}" aria-label="Order quantity for ${esc(i.item.name)}">` : `<div class="tt-order-line-sub">Suggested ${fmtQty(i.suggestedQty, decimalsForUnit(i.unit))} ${esc(i.unit)}</div>`}
-          ${i.supplierUrl ? `<a class="tt-link-btn" href="${esc(i.supplierUrl)}" target="_blank" rel="noopener noreferrer">${icon('chevronRight', 12)}</a>` : ''}
+          ${i.supplierUrl ? `<a class="tt-link-btn" href="${esc(i.supplierUrl)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(i.supplierName || 'supplier')} link for ${esc(i.item.name)}">${icon('chevronRight', 12)}</a>` : ''}
         </div>`).join('')}
       </div>`).join('')}
 
-    <div class="tt-panel-title" style="margin-top:var(--sp-5);">Order history</div>
+    <h2 class="tt-panel-title" style="margin-top:var(--sp-5);">Order history</h2>
     ${!history.length ? `<div class="tt-panel"><div class="tt-empty">No orders placed yet.</div></div>` : `
       <div class="tt-list-rows">
         ${history.map((o) => `<button class="tt-order-history-row" data-open-order="${o.id}">

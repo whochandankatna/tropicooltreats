@@ -25,7 +25,7 @@ export async function renderMore(root) {
   if (!subPage) {
     root.innerHTML = `
       <div class="tt-panel">
-        <div class="tt-panel-title">${esc(sess.name)}</div>
+        <h2 class="tt-panel-title">${esc(sess.name)}</h2>
         <div class="tt-panel-sub">${sess.role === 'manager' ? 'Manager' : 'Staff'}</div>
       </div>
       <div class="tt-more-menu">

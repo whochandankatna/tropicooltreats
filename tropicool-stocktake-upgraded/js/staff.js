@@ -13,7 +13,7 @@ export async function renderStaff(root, storeId) {
   const staff = await db.getStaffPublic(storeId);
   root.innerHTML = `
     <div class="tt-panel">
-      <div class="tt-panel-title">Staff</div>
+      <h2 class="tt-panel-title">Staff</h2>
       <div class="tt-panel-sub">Who can sign in and count at this store.</div>
       <div class="tt-list-rows">
         ${staff.map((s) => `<div class="tt-list-row"><div><div class="tt-list-row-name">${esc(s.name)}</div><div class="tt-list-row-sub">${s.role === 'manager' ? 'Manager' : 'Staff'} · ${s.hasPinSet ? 'PIN set' : 'No PIN yet'}</div></div></div>`).join('')}

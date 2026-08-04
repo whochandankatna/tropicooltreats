@@ -50,8 +50,8 @@ export function renderPinLock(container, storeId) {
     container.innerHTML = `
       <div class="tt-pinlock">
         <div class="tt-pinlock-logo">TT</div>
-        <div class="tt-pinlock-store">${store ? store.name : ''}</div>
-        <div class="tt-pinlock-title">Enter your PIN</div>
+        <h2 class="tt-pinlock-store">${store ? store.name : ''}</h2>
+        <h1 class="tt-pinlock-title">Enter your PIN</h1>
         <div class="tt-pin-dots" aria-hidden="true">${[0, 1, 2, 3].map((i) => `<span class="${i < entered.length ? 'filled' : ''}"></span>`).join('')}</div>
         <div class="tt-pin-error" role="alert" aria-live="assertive">${errorMsg ? errorMsg : ''}</div>
         <div class="tt-pin-keypad">

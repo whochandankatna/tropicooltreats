@@ -28,7 +28,7 @@ been deployed, and no production Supabase migration has been run.
 - [x] Phase 7 — Ordering workflow
 - [x] Phase 8 — Reports + exports
 - [x] Phase 9 — Cash count redesign
-- [ ] Phase 10 — Design system / accessibility pass
+- [x] Phase 10 — Design system / accessibility pass
 - [ ] Phase 11 — Offline/PWA
 - [ ] Phase 12 — Final code-quality pass + full test suite + docs
 
@@ -467,6 +467,93 @@ the mock's in-memory state resets on every full navigation, so two
 `newPage()` calls never actually shared data to collide over). All 24
 passing, plus a clean re-run of the Phase 4-8 Playwright suites and all
 25 unit tests.
+
+### Phase 10 — design system / accessibility pass
+
+Unlike Phases 4-9, which each add a feature, this phase is an audit across
+the whole app plus real fixes, using an automated `axe-core` scan
+(WCAG 2.0/2.1 A/AA + best-practice rules) driven by Playwright across
+every screen and several open modals — not a manual read-through of the
+CSS.
+
+Real findings, fixed in product code:
+- **Colour contrast (serious).** `--danger`/`--warn`/`--success` as text on
+  their own soft badge background measured 3.96:1 / 4.08:1 / 2.81:1 —
+  real failures against WCAG's 4.5:1 minimum for normal text, not close
+  calls. Darkened all three (same hue, still clearly red/amber/green) to
+  pass at 5:1+ everywhere they're used, including on plain white. Dark
+  mode's equivalents were already well clear of the threshold (5.6:1+) and
+  didn't need changing.
+- **Icon-only link with no accessible name (serious).** The Orders tab's
+  supplier link (`orders.js`, added in Phase 7) dropped the visible
+  "Order" text the same link has in `items.js`, leaving only a chevron
+  icon with nothing for a screen reader to announce. Added an
+  `aria-label`.
+- **Invalid ARIA role (minor).** Home's filter chips were `<button
+  role="listitem">` inside a `<div role="list">` — `listitem` isn't an
+  allowed role override for `<button>`. Fixed by using real `<ul>`/`<li>`
+  markup instead of ARIA-role overrides on the wrong elements (the `<li>`
+  uses `display: contents` so it stays invisible to layout, only to the
+  accessibility tree).
+- **Missing `<main>` landmark (moderate) + "no content in a landmark"
+  (moderate).** The store-picker and PIN-lock screens (pre-login) had no
+  landmark at all, unlike the post-login shell's `<main class="tt-content">`
+  — fixed by wrapping both in `<main>`.
+- **No heading structure.** Every screen had a title styled to look like a
+  heading but marked up as a plain `<div>` — a screen-reader user
+  navigating by heading (a primary AT navigation method) got nothing.
+  Converted the topbar's per-tab title, the store-picker/PIN-lock titles,
+  and all 17 `.tt-panel-title` section headers across every file to real
+  `<h1>`/`<h2>` elements. Verified exactly one `<h1>` exists on every
+  screen (never zero, never two) — the app's existing global `* { margin:
+  0 }` reset meant this was a pure semantic change with no visual
+  side-effects, confirmed by the full regression re-run below.
+- **No skip link.** Added one (`js/app.js`, rendered inside the signed-in
+  shell where there's real nav chrome to skip past — not on the much
+  shorter pre-login screens) — off-screen until keyboard-focused, then
+  jumps straight to `#ttContent`.
+- **`lang="en"` instead of `lang="en-AU"`**, and a dead, never-referenced
+  `#ttLiveRegion` element and a `role="application"` on the app root that
+  both predated this phase and were doing nothing (`role="application"`
+  actually hands ALL keyboard handling to the app and suppresses a screen
+  reader's normal browse-mode navigation — actively counterproductive for
+  an app that's just standard forms and buttons with no custom keyboard
+  scheme). Removed both, fixed the language tag.
+- **Australian spelling**: one stray "defense in depth" in a code comment
+  (`items.js`) — everything else was already consistent; this was the one
+  slip found across a repo-wide sweep for common American-only spellings.
+
+Completed the Reports tab's ARIA tabs pattern (`role="tab"`/`aria-selected`
+already existed from Phase 8) with proper `id`/`aria-controls` association
+between each tab and the `role="tabpanel"` region it controls — stopped
+short of the full roving-tabindex + arrow-key APG pattern, since every tab
+button stays a plain, always-focusable `<button>` (fully keyboard
+operable via Tab/Enter either way), and half-implementing roving tabindex
+without arrow-key support would have made inactive tabs unreachable by
+keyboard — a regression, not an improvement.
+
+Also verified rather than changed: dark mode contrast (already fine
+everywhere), `prefers-reduced-motion` handling (already present), 44px
+touch targets on every `.tt-input`-based control including this session's
+own Phase 7-9 additions (inherited automatically via the shared class,
+never overridden smaller), and visible focus rings on every interactive
+element (already global from Phase 4).
+
+**Result: the automated scan found zero violations on every screen**
+after fixes — store picker, PIN lock, Home, all three Count screens,
+Orders, all seven Reports, the More menu and all five subpages, and the
+add-item modal. Re-ran the full Phase 4-9 Playwright suites and all 25
+unit tests afterward to confirm the markup changes (div → heading,
+`<div role="list">` → `<ul>`/`<li>`) didn't break any existing
+functionality — all passing, no regressions.
+
+**Known, deliberately out of scope for this pass:** a handful of older
+`fmtQty(...)` calls in `home.js`/`reports.js` still default to zero
+decimal places regardless of the unit (flagged already in the Phase 7
+README notes, not an accessibility issue, left for a future cleanup
+pass); and the Reports tabs don't implement arrow-key navigation (see
+above — the plain-button approach is fully accessible, just not the
+maximal APG pattern).
 
 ## Running tests
 

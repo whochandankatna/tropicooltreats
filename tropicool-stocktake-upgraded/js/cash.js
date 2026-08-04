@@ -43,7 +43,7 @@ export async function renderCash(root) {
 
   root.innerHTML = `
     <div class="tt-panel">
-      <div class="tt-panel-title">Cash count</div>
+      <h2 class="tt-panel-title">Cash count</h2>
       <div class="tt-form">
         <div class="tt-field"><label for="ttCashRegister">Register</label><input class="tt-input" id="ttCashRegister" placeholder="Front counter"></div>
         <div class="tt-field"><label for="ttCashShift">Shift</label><select class="tt-input" id="ttCashShift">
@@ -65,7 +65,7 @@ export async function renderCash(root) {
     </div>
     ${isManager() ? `
     <div class="tt-panel">
-      <div class="tt-panel-title">History (by register — never combined into one total)</div>
+      <h2 class="tt-panel-title">History (by register — never combined into one total)</h2>
       ${Object.entries(byRegister).map(([reg, cs]) => `
         <div class="tt-panel-subtitle">${esc(reg)}</div>
         <div class="tt-list-rows">
