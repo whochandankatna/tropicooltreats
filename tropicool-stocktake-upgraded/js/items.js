@@ -14,7 +14,7 @@
  */
 import * as db from './database.js';
 import { getSession, isManager } from './auth.js';
-import { esc, icon, fmtQty, toast, confirmDialog, promptText, openModal, closeModal } from './ui.js';
+import { esc, icon, fmtQty, toast, promptText, openModal, closeModal } from './ui.js';
 import { CATEGORIES, decimalsForUnit } from './config.js';
 import { brisbaneDateISO, daysBetween, formatBrisbaneDate } from './date.js';
 

@@ -30,7 +30,7 @@ been deployed, and no production Supabase migration has been run.
 - [x] Phase 9 — Cash count redesign
 - [x] Phase 10 — Design system / accessibility pass
 - [x] Phase 11 — Offline/PWA
-- [ ] Phase 12 — Final code-quality pass + full test suite + docs
+- [x] Phase 12 — Final code-quality pass + full test suite + docs
 
 ## Layout
 
@@ -646,7 +646,74 @@ registration silently never fired until `pwa.js` was fixed to check
 actual registration state rather than assuming `addEventListener('load',
 ...)` always works from a deferred module context.
 
+### Phase 12 — code-quality pass + full test suite + docs
+
+The final phase turns the scratch verification scripts accumulated across
+Phases 4-11 into a real, re-runnable, checked-in test suite, plus a code
+cleanup pass.
+
+- **`tests/e2e/`**: every Playwright script written for Phases 4, 5, 6, 7,
+  8, 9, 10, and 11 is now a real file in the repo, not a throwaway script
+  in `/tmp`. A shared `tests/e2e/_helpers.mjs` module holds `signIn`,
+  `signOutFlow`/`enterPin` (for the mid-test staff-switching pattern used
+  by the cash and offline conflict tests), `goToCount`/`goToOrders`/
+  `goToReports`/`goToCash`/`goToItems`, `dismissAnomalyIfShown`, and
+  `makeCheck`/`reportAndExit` — cutting 40-60% of the boilerplate each
+  phase script previously repeated. Every original assertion was preserved
+  verbatim during the port; nothing was quietly dropped or loosened to
+  make the refactor easier. `playwright` and `axe-core` are now real
+  `devDependencies` (pinned to `1.56.1`/`4.12.1`, the versions verified
+  throughout this project) with `npm run test:e2e` (phases 4-9 and 11) and
+  `npm run test:a11y` (phase 10) scripts, so a fresh clone can run
+  `npm install` and reproduce every check in this document rather than
+  trusting the write-up on faith.
+- **`tests/sql/test_cash_rls.sql`/`test_po_rls.sql`**: the RLS
+  verification scripts used by hand during Phases 6, 7, and 9 (cash count
+  and purchase order policies — store isolation, impersonation blocking,
+  manager-only approval, append-only enforcement, one-current-row-per-slot
+  uniqueness, no-delete-once-sent) moved into the repo alongside the
+  existing `_local_auth_stub.sql`, with a header explaining they're
+  designed to run against a scratch local Postgres and are never applied
+  to a real database.
+- **The deferred `fmtQty` decimal-precision gap, finally closed.** Phase 7
+  flagged but deliberately deferred fixing three call sites in `home.js`
+  (the reorder list and both expiry-alert rows in the filter-chip drill
+  down) that called `fmtQty(n)` with no `decimals` argument, silently
+  rounding a fractional stock figure like 6.2 kg down to a whole "6 kg" —
+  the exact accuracy bug Phase 7 fixed everywhere else. A code-quality
+  sweep for this phase found one more instance in `stocktake.js`'s
+  unusual-count review list (System/counted quantities on the
+  Review-before-submit screen). All four now pass `decimalsForUnit(unit)`
+  like every other quantity display in the app.
+- **Dead code sweep**: ran ESLint's `no-unused-vars` rule (via a scratch
+  flat config, not committed — this project has no linter installed) over
+  every file in `js/`. Found and removed eight genuinely dead references:
+  an unused `setActiveTab` import in `app.js` (the function is only ever
+  called from inside `nav.js` itself), two `const session = getSession()`
+  reads in `app.js` whose results were never used, an unused `fmtQty`
+  import in `cash.js`, an unused `ANOMALY_VARIANCE_PCT` import in
+  `database.js`, an unused `timeAgo` import and an unused event-handler
+  parameter in `home.js`, and an unused `confirmDialog` import in
+  `items.js`. All were confirmed dead (not called anywhere, no side
+  effects on the removed calls) before deletion; the app was re-verified
+  against the full Phase 4-11 Playwright suite afterwards to confirm
+  nothing broke.
+- **Final regression**: all 25 unit tests, all 8 e2e phase scripts (4-11,
+  166 individual checks total), and a fresh axe-core scan (zero
+  violations across every screen and the two open-modal states checked)
+  were re-run end to end after the code-quality changes above, against
+  the newly-committed `tests/e2e/` files rather than the old scratch
+  copies, to confirm the port and the cleanup didn't regress anything.
+
+This completes all 12 phases of the working plan in `AUDIT.md` §12. The
+`tropicool-stocktake_9.html` original at the repo root was never modified
+at any point in this project, and no database or deployment changes were
+made — see "Why isn't this deployed" below for what still needs sign-off
+before any of this touches production.
+
 ## Running tests
+
+### Unit tests
 
 No dependency install required:
 
@@ -655,14 +722,42 @@ node --test tests/date.test.js                                  # 17 tests
 node --experimental-strip-types --test tests/hash_and_jwt.test.mjs  # 8 tests, needs Node 22+
 ```
 
-RLS policies were verified by hand against a local Postgres 16 instance
-using `tests/sql/_local_auth_stub.sql` to simulate `auth.jwt()` — see the
-Phase 3 commit message for the full list of scenarios exercised (store
-isolation, impersonation blocking, manager-only approval, PIN table
-lockdown, append-only enforcement). Not yet wired into an automated test
-script; that's worth doing once a real Supabase project (or the `supabase`
-CLI's local dev stack) is available to run migrations against directly
-rather than the hand-built stub.
+### End-to-end tests (Playwright)
+
+`tests/e2e/` holds the real-browser verification suite built up over
+Phases 4-11 — one script per phase, plus a shared `_helpers.mjs` module
+(`signIn`, `goToCount`/`goToOrders`/`goToReports`/`goToCash`/`goToItems`,
+`dismissAnomalyIfShown`, `makeCheck`/`reportAndExit`). These are genuine
+browser tests (real clicks, real downloads, real `context.setOffline()`),
+not unit tests, so they need Playwright's Chromium and a live static
+server:
+
+```bash
+npm install               # pulls in playwright + axe-core (devDependencies)
+npx http-server . -p 8891 -s &   # serve the app; -s (silent) keeps logs quiet
+npm run test:e2e           # phases 4-9 + 11, in order, stops at the first failure
+npm run test:a11y          # phase 10, the axe-core accessibility scan
+```
+
+`TT_BASE_URL` overrides the default `http://127.0.0.1:8891/index.html` if
+you serve the app on a different port. Each script can also be run
+individually, e.g. `node tests/e2e/phase09_cash.mjs`. Screenshots from
+`phase04_breakpoints.mjs` are written to `tests/e2e/screenshots/`
+(gitignored) for manual visual spot-checking; they are not asserted on.
+
+### RLS policies
+
+Verified by hand against a local Postgres 16 instance using
+`tests/sql/_local_auth_stub.sql` to simulate `auth.jwt()`, then
+`tests/sql/test_cash_rls.sql` and `tests/sql/test_po_rls.sql` for the cash
+count and purchase order policies specifically (store isolation,
+impersonation blocking, manager-only approval, append-only enforcement,
+one-current-row-per-slot uniqueness, no-delete-once-sent) — see the Phase
+3 commit message for the full list of scenarios exercised on the core
+schema. Not yet wired into an automated test runner; that's worth doing
+once a real Supabase project (or the `supabase` CLI's local dev stack) is
+available to run migrations against directly rather than the hand-built
+stub. Never run these against a real database.
 
 ## Why isn't this deployed / connected to Supabase yet?
 

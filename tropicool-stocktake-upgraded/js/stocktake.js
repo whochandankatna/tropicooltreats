@@ -521,7 +521,7 @@ async function openReview(root) {
       <div class="tt-list-rows">${uncounted.slice(0, 6).map((i) => `<div class="tt-list-row"><div class="tt-list-row-name">${esc(i.item.name)}</div></div>`).join('')}${uncounted.length > 6 ? `<div class="tt-list-row-sub">+${uncounted.length - 6} more</div>` : ''}</div>
     </div>` : ''}
     ${unusual.length ? `<div class="tt-review-section"><div class="tt-review-section-title">${icon('alert', 14)} ${unusual.length} unusual count${unusual.length === 1 ? '' : 's'} — worth a second look</div>
-      <div class="tt-list-rows">${unusual.map((l) => `<div class="tt-list-row"><div><div class="tt-list-row-name">${esc(l.inv.item.name)}</div><div class="tt-list-row-sub">System ${fmtQty(l.systemQty)} → counted ${fmtQty(l.countedQty)} ${esc(l.unit)}</div></div></div>`).join('')}</div>
+      <div class="tt-list-rows">${unusual.map((l) => `<div class="tt-list-row"><div><div class="tt-list-row-name">${esc(l.inv.item.name)}</div><div class="tt-list-row-sub">System ${fmtQty(l.systemQty, decimalsForUnit(l.unit))} → counted ${fmtQty(l.countedQty, decimalsForUnit(l.unit))} ${esc(l.unit)}</div></div></div>`).join('')}</div>
     </div>` : ''}
     ${uncounted.length && !blockedReason ? `<label class="tt-checkbox-row">
       <input type="checkbox" id="ttAckIncomplete">

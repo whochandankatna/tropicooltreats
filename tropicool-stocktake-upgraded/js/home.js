@@ -5,8 +5,8 @@
  */
 import * as db from './database.js';
 import { getSession } from './auth.js';
-import { esc, icon, fmtQty, timeAgo, openModal, closeModal } from './ui.js';
-import { EXPIRY_WARN_DAYS, DRAFT_STORAGE_PREFIX, CONFLICT_STORAGE_PREFIX } from './config.js';
+import { esc, icon, fmtQty, openModal, closeModal } from './ui.js';
+import { EXPIRY_WARN_DAYS, DRAFT_STORAGE_PREFIX, CONFLICT_STORAGE_PREFIX, decimalsForUnit } from './config.js';
 import { formatBrisbaneDate } from './date.js';
 import { setActiveTab } from './nav.js';
 import { isOnline } from './connectivity.js';
@@ -101,7 +101,7 @@ export async function renderHome(root) {
 
   root.querySelector('#ttResumeBtn').addEventListener('click', () => setActiveTab('count'));
   root.querySelector('#ttConflictBanner')?.addEventListener('click', () => setActiveTab('count'));
-  root.querySelector('#ttDetailsToggle').addEventListener('click', (e) => {
+  root.querySelector('#ttDetailsToggle').addEventListener('click', () => {
     detailsOpen = !detailsOpen;
     renderHome(root);
   });
@@ -128,13 +128,13 @@ function openFilterModal(filter, data) {
   let title, rows;
   if (filter === 'reorder') {
     title = 'Needs order';
-    rows = data.reorderList.map((i) => row(i.item.name, `${fmtQty(i.currentStock)} ${i.unit} on hand · reorder point ${i.reorderPoint}`));
+    rows = data.reorderList.map((i) => row(i.item.name, `${fmtQty(i.currentStock, decimalsForUnit(i.unit))} ${i.unit} on hand · reorder point ${i.reorderPoint}`));
   } else if (filter === 'expired') {
     title = 'Expired';
-    rows = data.expired.map((a) => row(a.inventory.item.name, `Expired ${Math.abs(a.daysUntilExpiry)}d ago · ${fmtQty(a.batch.quantityRemaining)} ${a.inventory.unit} affected`));
+    rows = data.expired.map((a) => row(a.inventory.item.name, `Expired ${Math.abs(a.daysUntilExpiry)}d ago · ${fmtQty(a.batch.quantityRemaining, decimalsForUnit(a.inventory.unit))} ${a.inventory.unit} affected`));
   } else if (filter === 'expiring') {
     title = 'Expiring soon';
-    rows = data.expiringSoon.map((a) => row(a.inventory.item.name, `${a.daysUntilExpiry === 0 ? 'Expires today' : `Expires in ${a.daysUntilExpiry}d`} · ${fmtQty(a.batch.quantityRemaining)} ${a.inventory.unit} affected`));
+    rows = data.expiringSoon.map((a) => row(a.inventory.item.name, `${a.daysUntilExpiry === 0 ? 'Expires today' : `Expires in ${a.daysUntilExpiry}d`} · ${fmtQty(a.batch.quantityRemaining, decimalsForUnit(a.inventory.unit))} ${a.inventory.unit} affected`));
   } else {
     title = 'Largest variances';
     rows = data.variances.map((v) => row(v.storeInventoryId, `Variance ${v.variance > 0 ? '+' : ''}${fmtQty(v.variance, 1)} ${v.unit}`));

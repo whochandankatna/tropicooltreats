@@ -17,7 +17,7 @@
  */
 import * as db from './database.js';
 import { getSession, isManager } from './auth.js';
-import { esc, fmtQty, toast, confirmDialog, promptText, openModal, closeModal } from './ui.js';
+import { esc, toast, confirmDialog, promptText, openModal, closeModal } from './ui.js';
 import { formatBrisbaneDate } from './date.js';
 import { CASH_DENOMINATIONS, CASH_SHIFTS } from './config.js';
 

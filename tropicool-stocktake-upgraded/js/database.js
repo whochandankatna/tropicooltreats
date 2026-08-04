@@ -12,7 +12,7 @@
 import { seedMockData } from './mock-data.js';
 import { verifyPin } from './pin-hash.js';
 import { brisbaneDateISO } from './date.js';
-import { validateSupplierUrl, ANOMALY_VARIANCE_PCT, CASH_DENOMINATIONS, CASH_SHIFTS } from './config.js';
+import { validateSupplierUrl, CASH_DENOMINATIONS, CASH_SHIFTS } from './config.js';
 
 let state = null;
 let realtimeListeners = [];

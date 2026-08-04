@@ -5,7 +5,7 @@
 import { initDatabase, onChange } from './database.js';
 import { restoreSession, getSession, onSessionChange, renderPinLock } from './auth.js';
 import { STORES } from './config.js';
-import { TABS, getActiveTab, setActiveTab, onTabChange, renderBottomNav, renderSidebar, bindNav } from './nav.js';
+import { TABS, getActiveTab, onTabChange, renderBottomNav, renderSidebar, bindNav } from './nav.js';
 import { esc, icon } from './ui.js';
 import { renderHome } from './home.js';
 import { renderCount, syncQueuedDrafts } from './stocktake.js';
@@ -61,7 +61,6 @@ function renderStorePickerOrLock() {
 }
 
 function renderShell() {
-  const session = getSession();
   appRoot.innerHTML = `
     <a class="tt-skip-link" href="#ttContent">Skip to content</a>
     <div class="tt-app-shell">
@@ -107,7 +106,6 @@ async function renderContentOnly() {
     el.setAttribute('aria-current', active ? 'page' : 'false');
   });
 
-  const session = getSession();
   const tab = getActiveTab();
   if (tab === 'home') return renderHome(content);
   if (tab === 'count') return renderCount(content);
