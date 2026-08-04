@@ -24,7 +24,7 @@ been deployed, and no production Supabase migration has been run.
       negative/decimal quantities) plus anomaly confirmation (large
       variance, over max, unexpected zero) and an in-modal recount reason
       replacing window.prompt
-- [ ] Phase 6 — Inventory model split + batch expiry
+- [x] Phase 6 — Inventory model split + batch expiry
 - [ ] Phase 7 — Ordering workflow
 - [ ] Phase 8 — Reports + exports
 - [ ] Phase 9 — Cash count redesign
@@ -99,12 +99,13 @@ npx http-server tropicool-stocktake-upgraded -p 8080
 # then open http://localhost:8080/index.html
 ```
 
-Pick a store (only Mooloolaba has seed data), then sign in with one of the
-demo PINs: **1111** (Alice, staff), **2222** (Bob, manager), **3333**
-(Chloe, staff). These are mock/demo-only credentials seeded by
-`mock-data.js` — see the warning at the top of `js/pin-hash.js` for why this
-approach is fine for a mock layer but must never be how a real deployment
-checks a PIN.
+Pick a store, then sign in with one of the demo PINs. Mooloolaba: **1111**
+(Alice, staff), **2222** (Bob, manager), **3333** (Chloe, staff). Noosa (a
+second store, seeded from Phase 6 to exercise multi-store isolation with a
+smaller, different catalogue): **4444** (Deepak Rao, manager). These are
+mock/demo-only credentials seeded by `mock-data.js` — see the warning at the
+top of `js/pin-hash.js` for why this approach is fine for a mock layer but
+must never be how a real deployment checks a PIN.
 
 ### Mock data — what's real and what resets
 
@@ -204,6 +205,64 @@ supplier name was rejected for the wrong reason (missing name, checked
 first) rather than the protocol — reordered `database.js`'s validation so
 unsafe-URL rejection is unconditional rather than only checked once a name
 is present.
+
+### Phase 6 — inventory model split + batch expiry
+
+Adds, on top of Phase 5, the full `item_master` / `store_inventory` field
+split proposed in `DATA_MODEL.md`, exposed in the Items screen rather than
+just living in the schema docs:
+
+- **Ordering/costing fields**: supplier item code, supplier pack unit, pack
+  conversion (units per pack), unit cost, lead time (days), safety-stock
+  (days), order pack size — all optional, editable on both add and edit,
+  and threaded through `database.js`'s validation the same way the Phase 5
+  fields are.
+- **Critical-item flag**: a checkbox separate from the existing "important"
+  star — lives on `item_master` (shared identity) rather than
+  `store_inventory` (per-store stock levels), matching the schema split in
+  `DATA_MODEL.md`. Shown as a `CRITICAL` badge on the item card. Editing it
+  goes through a new `db.setItemCritical()` rather than being folded into
+  `updateStoreInventory`, since it is not a per-store field.
+- **Batch-level expiry (FEFO)**: replaces the original app's single
+  expiry-date-per-item with proper batches — `db.addBatch()`,
+  `db.closeBatch(id, 'depleted' | 'wasted', reason, actorId)`,
+  `db.getBatchesFor()` (FEFO-sorted, soonest use-by first). The Items
+  screen gained a "Batches" button per item opening a modal that lists open
+  batches (quantity remaining, received date, use-by, days-to-expiry
+  label), lets a manager mark one used up or wasted, and receive a new one
+  (quantity, received date, use-by, delivery reference). Wasting a batch
+  requires a reason, captured through the existing accessible `promptText()`
+  modal rather than reintroducing `window.prompt` (see "Errors and fixes"
+  below — this was caught and fixed before testing, not after). Item cards
+  and archived-item list also show an expiry badge (`Expires in Nd` /
+  `Expires today` / `Expired Nd ago`) sourced from the soonest open batch.
+- **Multi-store isolation, exercised not just asserted**: a second store
+  (Noosa) was added to the mock seed with its own small item catalogue and
+  its own manager (Deepak Rao, PIN 4444), specifically so store isolation
+  could be driven end to end in a real browser session rather than reasoned
+  about from the code. Every item, inventory, and batch row carries
+  `storeId`/derives it via the inventory row, and `getStoreInventory`,
+  `getBatchesFor`, etc. all filter by it.
+
+Verified with 18 new Playwright checks: new item-form fields (supplier
+code, pack unit/conversion, unit cost, lead time, safety-stock, order pack
+size) saving and round-tripping correctly through the edit drawer; the
+critical-item badge and checkbox; the full batch lifecycle (add, mark used
+up, mark wasted with a required reason, confirming no native
+`window.prompt` fires and an empty reason is blocked inline); and
+multi-store isolation (signing in at Noosa and confirming exactly its 4
+seeded items are visible, that a Mooloolaba-only item from earlier in the
+same run is absent, and vice versa). All 18 passing, plus a full re-run of
+the Phase 4 and Phase 5 Playwright suites (no regressions) and all 24 unit
+tests (date + hash/JWT, still passing).
+
+Two bugs were self-caught and fixed before testing began, not found by the
+tests: reusing `window.prompt()` for the waste reason (the exact
+anti-pattern Phase 5 had just removed) — fixed by adding a `promptText()`
+helper to `ui.js`; and the waste-reason prompt clobbering the open batches
+modal's DOM since both use the same modal singleton — fixed by reopening
+the batches modal fresh after the prompt resolves instead of reusing stale
+element references.
 
 ## Running tests
 

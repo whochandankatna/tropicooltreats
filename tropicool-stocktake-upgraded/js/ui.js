@@ -108,6 +108,37 @@ export function confirmDialog({ title, body, confirmLabel = 'Confirm', cancelLab
   });
 }
 
+/**
+ * Accessible in-modal replacement for window.prompt() — used anywhere a
+ * short required reason needs capturing (recount reasons, waste reasons,
+ * archive reasons). Resolves the trimmed text, or null if cancelled.
+ */
+export function promptText({ title, body, label, placeholder = '', confirmLabel = 'Save', required = true }) {
+  return new Promise((resolve) => {
+    const dialog = openModal(`
+      <h2 id="tt-prompt-title" class="tt-modal-title">${esc(title)}</h2>
+      ${body ? `<p class="tt-modal-body">${body}</p>` : ''}
+      <div class="tt-field"><label for="ttPromptInput" class="tt-sr-only">${esc(label || title)}</label>
+        <textarea class="tt-input" id="ttPromptInput" rows="2" placeholder="${escAttr(placeholder)}"></textarea></div>
+      <div class="tt-pin-error" id="ttPromptError" role="alert" aria-live="assertive"></div>
+      <div class="tt-modal-actions">
+        <button class="tt-btn ghost" data-action="cancel">Cancel</button>
+        <button class="tt-btn" data-action="confirm">${esc(confirmLabel)}</button>
+      </div>
+    `, { labelledBy: 'tt-prompt-title', onClose: () => resolve(null) });
+    dialog.querySelector('[data-action="cancel"]').addEventListener('click', () => closeModal());
+    dialog.querySelector('[data-action="confirm"]').addEventListener('click', () => {
+      const val = dialog.querySelector('#ttPromptInput').value.trim();
+      if (required && !val) { dialog.querySelector('#ttPromptError').textContent = 'This is required.'; return; }
+      modalRoot._onClose = null;
+      closeModal();
+      resolve(val);
+    });
+  });
+}
+
+function escAttr(s) { return esc(s); }
+
 // ---- Icons (inline SVG, currentColor so they follow theme) ------------------------
 const ICONS = {
   home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',

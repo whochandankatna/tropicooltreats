@@ -67,8 +67,20 @@ export async function getStoreInventory(storeId) {
   );
 }
 
+/** FEFO order — earliest use-by date first, so staff always see what to use next. */
 export async function getBatchesFor(storeInventoryId) {
-  return clone(state.batches.filter((b) => b.storeInventoryId === storeInventoryId && b.status === 'active'));
+  return clone(
+    state.batches
+      .filter((b) => b.storeInventoryId === storeInventoryId && b.status === 'active')
+      .sort((a, b) => (a.useByDate || '9999').localeCompare(b.useByDate || '9999')),
+  );
+}
+
+function nonNegativeOrNull(v, label) {
+  if (v === '' || v == null) return null;
+  const n = Number(v);
+  if (Number.isNaN(n) || n < 0) throw new ValidationError(`${label} can’t be negative.`);
+  return n;
 }
 
 /**
@@ -78,7 +90,10 @@ export async function getBatchesFor(storeInventoryId) {
  * (duplicate name within the store — that needs a sibling-row lookup).
  * `excludeInventoryId` lets an edit exclude itself from the duplicate check.
  */
-function validateInventoryInput({ storeId, name, unit, currentStock, reorderPoint, maxStock, supplierName, supplierUrl, excludeInventoryId }) {
+function validateInventoryInput({
+  storeId, name, unit, currentStock, reorderPoint, maxStock, supplierName, supplierUrl,
+  unitCost, leadTimeDays, safetyStockDays, orderPackSize, excludeInventoryId,
+}) {
   if (name !== undefined) {
     const trimmed = String(name).trim();
     if (!trimmed) throw new ValidationError('Give the item a name.');
@@ -115,19 +130,36 @@ function validateInventoryInput({ storeId, name, unit, currentStock, reorderPoin
   if (supplierUrl !== undefined && supplierUrl !== '' && !String(supplierName || '').trim()) {
     throw new ValidationError('Add a supplier name to go with that link — an empty name next to a live link is confusing at order time.');
   }
-  return { normalizedUrl };
+  const normalizedUnitCost = nonNegativeOrNull(unitCost, 'Unit cost');
+  const normalizedLeadTime = nonNegativeOrNull(leadTimeDays, 'Lead time');
+  const normalizedSafetyStock = nonNegativeOrNull(safetyStockDays, 'Safety-stock days');
+  const normalizedOrderPack = orderPackSize === '' || orderPackSize == null ? null : Number(orderPackSize);
+  if (normalizedOrderPack !== null && (Number.isNaN(normalizedOrderPack) || normalizedOrderPack <= 0)) {
+    throw new ValidationError('Order pack size must be greater than zero.');
+  }
+  return { normalizedUrl, normalizedUnitCost, normalizedLeadTime, normalizedSafetyStock, normalizedOrderPack };
 }
 
-export async function addItem({ storeId, actorId, name, categoryKey, unit, currentStock, reorderPoint, maxStock, supplierName, supplierUrl, important, criticalItem }) {
-  const { normalizedUrl } = validateInventoryInput({ storeId, name, unit, currentStock, reorderPoint, maxStock, supplierName, supplierUrl });
+export async function addItem({
+  storeId, actorId, name, categoryKey, unit, currentStock, reorderPoint, maxStock, targetStock,
+  supplierName, supplierUrl, supplierItemCode, supplierPackUnit, packConversion,
+  unitCost, leadTimeDays, safetyStockDays, orderPackSize, important, criticalItem,
+}) {
+  const { normalizedUrl, normalizedUnitCost, normalizedLeadTime, normalizedSafetyStock, normalizedOrderPack } =
+    validateInventoryInput({ storeId, name, unit, currentStock, reorderPoint, maxStock, supplierName, supplierUrl, unitCost, leadTimeDays, safetyStockDays, orderPackSize });
   const item = { id: uid('item'), name: name.trim(), categoryKey, defaultUnit: unit, criticalItem: !!criticalItem, archived: false };
   state.items.push(item);
   const inv = {
     id: uid('inv'), storeId, itemId: item.id, storageArea: '', storageLocation: '',
     unit, currentStock: Number(currentStock) || 0, reorderPoint: Number(reorderPoint) || 0,
     lowWarningAt: Math.round((Number(reorderPoint) || 0) * 1.4 * 10) / 10,
-    targetStock: null, maxStock: maxStock === '' || maxStock == null ? null : Number(maxStock),
-    supplierName: (supplierName || '').trim(), supplierUrl: normalizedUrl || '', important: !!important, active: true,
+    targetStock: targetStock === '' || targetStock == null ? null : Number(targetStock),
+    maxStock: maxStock === '' || maxStock == null ? null : Number(maxStock),
+    supplierName: (supplierName || '').trim(), supplierUrl: normalizedUrl || '',
+    supplierItemCode: (supplierItemCode || '').trim(), supplierPackUnit: (supplierPackUnit || '').trim(),
+    packConversion: packConversion === '' || packConversion == null ? null : Number(packConversion),
+    unitCost: normalizedUnitCost, leadTimeDays: normalizedLeadTime, safetyStockDays: normalizedSafetyStock,
+    orderPackSize: normalizedOrderPack, important: !!important, active: true,
   };
   state.storeInventory.push(inv);
   recordAudit({ storeId, actorId, action: 'item_added', entityType: 'store_inventory', entityId: inv.id, afterState: inv });
@@ -138,21 +170,87 @@ export async function addItem({ storeId, actorId, name, categoryKey, unit, curre
 export async function updateStoreInventory(id, patch, actorId) {
   const inv = state.storeInventory.find((si) => si.id === id);
   if (!inv) throw new Error('Not found');
-  const { normalizedUrl } = validateInventoryInput({
+  const merged = { ...inv, ...patch };
+  const { normalizedUrl, normalizedUnitCost, normalizedLeadTime, normalizedSafetyStock, normalizedOrderPack } = validateInventoryInput({
     storeId: inv.storeId, excludeInventoryId: id,
-    unit: patch.unit !== undefined ? patch.unit : inv.unit,
-    currentStock: patch.currentStock !== undefined ? patch.currentStock : inv.currentStock,
-    reorderPoint: patch.reorderPoint !== undefined ? patch.reorderPoint : inv.reorderPoint,
-    maxStock: patch.maxStock !== undefined ? patch.maxStock : inv.maxStock,
-    supplierName: patch.supplierName !== undefined ? patch.supplierName : inv.supplierName,
-    supplierUrl: patch.supplierUrl !== undefined ? patch.supplierUrl : inv.supplierUrl,
+    unit: merged.unit, currentStock: merged.currentStock, reorderPoint: merged.reorderPoint, maxStock: merged.maxStock,
+    supplierName: merged.supplierName, supplierUrl: merged.supplierUrl,
+    unitCost: merged.unitCost, leadTimeDays: merged.leadTimeDays, safetyStockDays: merged.safetyStockDays, orderPackSize: merged.orderPackSize,
   });
   const before = clone(inv);
   Object.assign(inv, patch);
-  if (normalizedUrl !== undefined) inv.supplierUrl = normalizedUrl;
+  if (patch.supplierUrl !== undefined) inv.supplierUrl = normalizedUrl;
+  if (patch.unitCost !== undefined) inv.unitCost = normalizedUnitCost;
+  if (patch.leadTimeDays !== undefined) inv.leadTimeDays = normalizedLeadTime;
+  if (patch.safetyStockDays !== undefined) inv.safetyStockDays = normalizedSafetyStock;
+  if (patch.orderPackSize !== undefined) inv.orderPackSize = normalizedOrderPack;
   recordAudit({ storeId: inv.storeId, actorId, action: 'item_edited', entityType: 'store_inventory', entityId: inv.id, beforeState: before, afterState: inv });
   notifyChange('store_inventory');
   return clone(inv);
+}
+
+// ---- Batch-level expiry (Priority 6) --------------------------------------------
+// Replaces the original app's single expiry_date-per-item with proper
+// batch tracking: several open batches can exist for one item at once,
+// each with its own received/use-by date and remaining quantity, sorted
+// FEFO (getBatchesFor above) so staff always see what to use first.
+
+export async function addBatch({ storeInventoryId, quantityReceived, receivedDate, useByDate, supplierReference, actorId }) {
+  const inv = state.storeInventory.find((si) => si.id === storeInventoryId);
+  if (!inv) throw new Error('Not found');
+  const qty = Number(quantityReceived);
+  if (Number.isNaN(qty) || qty <= 0) throw new ValidationError('Batch quantity must be greater than zero.');
+  if (!receivedDate) throw new ValidationError('Received date is required.');
+  if (useByDate && useByDate < receivedDate) throw new ValidationError('Use-by date can’t be before the received date.');
+  const batch = {
+    id: uid('batch'), storeInventoryId, quantityReceived: qty, quantityRemaining: qty,
+    receivedDate, useByDate: useByDate || null, supplierReference: (supplierReference || '').trim(), status: 'active',
+  };
+  state.batches.push(batch);
+  state.stockMovements.push({
+    id: uid('mv'), storeInventoryId, movementType: 'delivery', quantity: qty, unit: inv.unit,
+    reason: null, reference: batch.supplierReference || null, relatedStoreId: null, batchId: batch.id,
+    sessionId: null, staffId: actorId, occurredAt: new Date().toISOString(),
+  });
+  recordAudit({ storeId: inv.storeId, actorId, action: 'batch_received', entityType: 'item_batch', entityId: batch.id, afterState: batch });
+  notifyChange('item_batches');
+  return clone(batch);
+}
+
+/** Marks a batch used up / thrown out. `status` is 'depleted' or 'wasted'; wasted requires a reason (mirrors the waste stock_movements CHECK constraint). */
+export async function closeBatch(batchId, status, reason, actorId) {
+  const batch = state.batches.find((b) => b.id === batchId);
+  if (!batch) throw new Error('Not found');
+  if (status === 'wasted' && !String(reason || '').trim()) {
+    throw new ValidationError('A reason is required when recording waste.');
+  }
+  const inv = state.storeInventory.find((si) => si.id === batch.storeInventoryId);
+  const before = clone(batch);
+  const wastedQty = batch.quantityRemaining;
+  batch.status = status;
+  batch.quantityRemaining = 0;
+  if (status === 'wasted' && wastedQty > 0) {
+    state.stockMovements.push({
+      id: uid('mv'), storeInventoryId: batch.storeInventoryId, movementType: 'waste', quantity: wastedQty,
+      unit: inv?.unit || '', reason: reason.trim(), reference: null, relatedStoreId: null, batchId: batch.id,
+      sessionId: null, staffId: actorId, occurredAt: new Date().toISOString(),
+    });
+  }
+  recordAudit({ storeId: inv?.storeId, actorId, action: status === 'wasted' ? 'batch_wasted' : 'batch_depleted', entityType: 'item_batch', entityId: batch.id, beforeState: before, afterState: batch });
+  notifyChange('item_batches');
+  return clone(batch);
+}
+
+/** Critical-item flag lives on item_master (shared identity), not store_inventory. */
+export async function setItemCritical(itemId, criticalItem, actorId) {
+  const item = state.items.find((it) => it.id === itemId);
+  if (!item) throw new Error('Not found');
+  const before = clone(item);
+  item.criticalItem = !!criticalItem;
+  const inv = state.storeInventory.find((si) => si.itemId === itemId);
+  recordAudit({ storeId: inv?.storeId, actorId, action: 'item_critical_flag_changed', entityType: 'item_master', entityId: item.id, beforeState: before, afterState: item });
+  notifyChange('item_master');
+  return clone(item);
 }
 
 export async function archiveItem(storeInventoryId, reason, actorId) {
