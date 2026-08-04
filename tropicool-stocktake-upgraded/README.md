@@ -15,7 +15,8 @@ been deployed, and no production Supabase migration has been run.
 - [x] Phase 1 — Brisbane business-date module (`js/date.js`) + tests
 - [x] Phase 2 — Data-model design (stocktake sessions, stock movements, store
       partitioning) — proposed migrations only, see `DATA_MODEL.md`
-- [ ] Phase 3 — RLS + auth hardening proposals
+- [x] Phase 3 — RLS policies + PIN/session auth redesign — proposed only,
+      see `AUTH_MODEL.md`
 - [ ] Phase 4 — Information architecture + mobile counting UI
 - [ ] Phase 5 — Error prevention / anomaly confirmation / archive-not-delete
 - [ ] Phase 6 — Inventory model split + batch expiry
@@ -32,12 +33,14 @@ been deployed, and no production Supabase migration has been run.
 tropicool-stocktake-upgraded/
   AUDIT.md                 audit + implementation plan (start here)
   DATA_MODEL.md              Phase 2 schema design, rationale, open questions
+  AUTH_MODEL.md                Phase 3 auth/session/RLS design, open questions
   index.html                app shell (pending — Phase 4)
   css/app.css                styles (pending — Phase 4, migrated from original)
   js/
     date.js                 Australia/Brisbane business-date utilities (done)
     config.js                Supabase URL/key, constants (pending)
-    auth.js                   PIN/session handling, client side of auth (pending)
+    auth.js                   PIN/session handling, client side of auth (pending —
+                                 design finalised in AUTH_MODEL.md "Client wiring")
     database.js                 Supabase query helpers (pending)
     inventory.js                  item master + store inventory (pending)
     stocktake.js                   stocktake sessions, count lines, movements (pending)
@@ -48,21 +51,38 @@ tropicool-stocktake-upgraded/
   manifest.webmanifest       installable PWA manifest (pending — Phase 11)
   supabase/
     migrations/               proposed SQL migrations (not run against production;
-                                 0001-0004 verified to apply cleanly against a
-                                 throwaway local Postgres 16, see DATA_MODEL.md)
-    functions/                  proposed Edge Function source (not deployed)
+                                 0001-0006 verified to apply cleanly against a
+                                 throwaway local Postgres 16, see DATA_MODEL.md
+                                 and AUTH_MODEL.md)
+    functions/
+      _shared/                   hash.ts (PBKDF2 PIN hashing), jwt.ts (HS256
+                                    session tokens), cors.ts — no external deps,
+                                    tested in tests/hash_and_jwt.test.mjs
+      verify-staff-pin/          PIN check + rate limiting + session mint (not deployed)
+      set-staff-pin/             manager-only PIN reset/role/lock (not deployed)
   tests/
-    date.test.js               Brisbane date tests (done, 16 passing)
+    date.test.js               Brisbane date tests (16 passing)
+    hash_and_jwt.test.mjs        PIN hashing + JWT signing/verification tests (8 passing)
+    sql/_local_auth_stub.sql       test-only harness simulating auth.jwt() locally
 ```
 
 ## Running tests
 
-No dependency install required — tests use Node's built-in test runner
-(Node 18+):
+No dependency install required:
 
 ```bash
-node --test tests/
+node --test tests/date.test.js                                  # 16 tests
+node --experimental-strip-types --test tests/hash_and_jwt.test.mjs  # 8 tests, needs Node 22+
 ```
+
+RLS policies were verified by hand against a local Postgres 16 instance
+using `tests/sql/_local_auth_stub.sql` to simulate `auth.jwt()` — see the
+Phase 3 commit message for the full list of scenarios exercised (store
+isolation, impersonation blocking, manager-only approval, PIN table
+lockdown, append-only enforcement). Not yet wired into an automated test
+script; that's worth doing once a real Supabase project (or the `supabase`
+CLI's local dev stack) is available to run migrations against directly
+rather than the hand-built stub.
 
 ## Why isn't this deployed / connected to Supabase yet?
 
