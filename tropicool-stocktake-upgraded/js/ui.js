@@ -174,3 +174,30 @@ export function timeAgo(iso) {
   if (hrs < 24) return `${hrs}h ago`;
   return `${Math.round(hrs / 24)}d ago`;
 }
+
+// ---- Report exports (Priority 8) --------------------------------------------------
+// CSV/JSON are real client-side file downloads via a Blob + temporary <a>,
+// no server round-trip. "Print" (reports.js) uses the browser's own
+// print-to-PDF, not a generated PDF file — see README's Phase 8 notes for
+// why that's the honest way to describe it rather than claiming a PDF
+// export this app doesn't actually build.
+export function downloadFile(filename, mimeType, content) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/** headers: string[]; rows: array of arrays in the same column order. */
+export function toCSV(headers, rows) {
+  const cell = (v) => {
+    const s = v == null ? '' : String(v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  return [headers, ...rows].map((r) => r.map(cell).join(',')).join('\r\n');
+}

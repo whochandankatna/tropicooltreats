@@ -137,3 +137,13 @@ test('brisbaneTimeHM returns 24-hour HH:MM in Brisbane time', () => {
   const instant = new Date('2026-08-04T00:05:00+10:00');
   assert.equal(TTDate.brisbaneTimeHM(instant), '00:05');
 });
+
+test('formatBrisbaneInstant renders the Brisbane calendar date, not the UTC date of the instant', () => {
+  // 9am Brisbane on Aug 4 is 23:00 UTC on Aug 3 -- a naive UTC slice of this
+  // ISO string would read "Aug 3", which is the exact bug this exists to
+  // avoid (see orders.js's Phase 7 fix for the concrete real-world case).
+  const label = TTDate.formatBrisbaneInstant('2026-08-04T09:00:00+10:00', { month: 'short', day: 'numeric' });
+  assert.match(label, /Aug/);
+  assert.match(label, /4/);
+  assert.doesNotMatch(label, /\b3\b/);
+});

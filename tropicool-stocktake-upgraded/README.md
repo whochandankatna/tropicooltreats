@@ -26,7 +26,7 @@ been deployed, and no production Supabase migration has been run.
       replacing window.prompt
 - [x] Phase 6 — Inventory model split + batch expiry
 - [x] Phase 7 — Ordering workflow
-- [ ] Phase 8 — Reports + exports
+- [x] Phase 8 — Reports + exports
 - [ ] Phase 9 — Cash count redesign
 - [ ] Phase 10 — Design system / accessibility pass
 - [ ] Phase 11 — Offline/PWA
@@ -342,12 +342,65 @@ test script needing adjustment, and fixed in product code:
    this phase's scope, but flagging it now rather than leaving it silent;
    worth a pass in Phase 10 (design/accessibility) or a dedicated cleanup.
 
+### Phase 8 — reports + exports
+
+Turns the Reports tab from one fixed panel into a report picker with seven
+reports, each exportable — real CSV/JSON file downloads (no server round
+trip) and a Print button. "Print" opens the browser's own print-to-PDF via
+`window.print()` rather than generating a PDF file directly; that's the
+honest description of what it does, not a claim of a PDF export this app
+doesn't build (working rule 7). A `@media print` stylesheet hides the nav
+chrome so only the active report prints.
+
+- **Today's stocktake** (Phase 4, unchanged) — system/counted/variance per
+  counted item, kept per-unit rather than summed across units.
+- **Staff completion** — who's counted how many of the store's items today,
+  including staff who haven't started (0 counted, not silently absent).
+- **Waste** — every batch logged as wasted in the last 30 days (item,
+  quantity, reason, staff, date), with an estimated cost total that
+  explicitly excludes items with no unit cost on file rather than counting
+  them as free.
+- **Expiry** — batches expired or expiring in the next 14 days, a longer
+  planning window than Home's urgent 3-day badge.
+- **Valuation** (manager-only, matching unit cost already being
+  manager-only everywhere else in the app): on-hand stock value by
+  category and in total, again never silently treating a missing unit
+  cost as $0 — it's flagged and excluded from the total instead.
+- **Orders** — a read-only rollup of Phase 7's order history.
+- **Audit log** (manager-only): every recorded action (item added/edited/
+  archived, batch received/wasted, order created/sent/received/cancelled,
+  etc.) with who did it and when, resolving the actor id to a name rather
+  than showing raw ids.
+
+Verified with 27 new Playwright checks: all seven report tabs present for
+a manager and the two manager-only ones (valuation, audit log) correctly
+hidden from a staff account; switching between reports renders the right
+title/table each time; a CSV export is a real downloaded `.csv` file with
+a header row, and a JSON export is valid, parseable JSON; the staff
+completion, expiry, and valuation reports show real numbers derived from
+the actual mock data rather than placeholders; waste and orders reports
+update after performing a real waste/order action in the same test run;
+the audit log shows an action just performed with the correct actor name;
+and the Print button genuinely calls `window.print()`. All 27 passing,
+plus a clean re-run of the Phase 4-7 Playwright suites and all 25 unit
+tests (one new test added for `formatBrisbaneInstant`, below).
+
+Along the way, converting order/audit timestamps for display surfaced the
+same class of bug Phase 7 had already fixed once in `orders.js` (naively
+slicing an ISO instant's first 10 characters instead of converting through
+Brisbane time) about to be reintroduced in `reports.js`. Rather than fix
+it twice, `date.js` gained a shared `formatBrisbaneInstant(isoInstant,
+opts)` — composes `brisbaneDateISO` + `formatBrisbaneDate` in one place —
+and `orders.js`'s local copy of the same fix was replaced with a call to
+it, with a new unit test (`tests/date.test.js`) covering the exact
+9am-Brisbane-is-still-yesterday-in-UTC case that motivates it.
+
 ## Running tests
 
 No dependency install required:
 
 ```bash
-node --test tests/date.test.js                                  # 16 tests
+node --test tests/date.test.js                                  # 17 tests
 node --experimental-strip-types --test tests/hash_and_jwt.test.mjs  # 8 tests, needs Node 22+
 ```
 

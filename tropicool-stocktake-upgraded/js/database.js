@@ -38,7 +38,8 @@ export async function getAuditLog(storeId, limit = 50) {
   return clone(
     state.auditLog.filter((a) => !storeId || a.storeId === storeId)
       .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
-      .slice(0, limit),
+      .slice(0, limit)
+      .map((a) => ({ ...a, actorName: state.staff.find((s) => s.id === a.actorId)?.name || 'Unknown' })),
   );
 }
 
@@ -470,6 +471,67 @@ export async function getLargestVariances(sessionId, limit = 5) {
     .map((l) => ({ ...l, variance: l.countedQty - l.systemQty }))
     .sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance))
     .slice(0, limit);
+}
+
+/**
+ * Who counted what in the current session, for a completion breakdown —
+ * "3 of 12 counted" per staff member, not a total across the whole store
+ * (Priority 8's staff-completion report). Staff with zero lines still
+ * appear (0 counted) so an obviously-idle account is visible, not just
+ * silently absent from the list.
+ */
+export async function getStaffCompletion(sessionId, storeId) {
+  const [lines, staff] = await Promise.all([getCountLines(sessionId), getStaffPublic(storeId)]);
+  return staff.map((s) => ({
+    staffId: s.id, name: s.name, role: s.role,
+    countedItems: lines.filter((l) => l.staffId === s.id).length,
+  })).sort((a, b) => b.countedItems - a.countedItems);
+}
+
+/**
+ * Waste logged via item_batches (closeBatch status='wasted') within the
+ * last `days` days, joined back to the item/unit for a readable report.
+ * stock_movements doesn't carry store_id directly (only via
+ * store_inventory_id), so this filters through getStoreInventory the same
+ * way getExpiryAlerts does, rather than assuming a movement's store.
+ */
+export async function getWasteReport(storeId, days = 30) {
+  const inv = await getStoreInventory(storeId);
+  const invIds = new Set(inv.map((i) => i.id));
+  const cutoff = Date.now() - days * 86400000;
+  return clone(
+    state.stockMovements
+      .filter((m) => m.movementType === 'waste' && invIds.has(m.storeInventoryId) && new Date(m.occurredAt).getTime() >= cutoff)
+      .map((m) => {
+        const i = inv.find((x) => x.id === m.storeInventoryId);
+        const staff = state.staff.find((s) => s.id === m.staffId);
+        return {
+          itemName: i?.item?.name || 'Item', unit: m.unit, quantity: m.quantity,
+          reason: m.reason, staffName: staff?.name || 'Unknown', occurredAt: m.occurredAt,
+          estimatedCost: i?.unitCost != null ? Math.round(i.unitCost * m.quantity * 100) / 100 : null,
+        };
+      })
+      .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)),
+  );
+}
+
+/**
+ * Stock value = current_stock * unit_cost, per item, grouped by category
+ * and totalled. Items with no unit_cost set are listed with a null value
+ * rather than silently treated as worth $0 — "no cost on file" and "worth
+ * nothing" are different facts, and conflating them would understate the
+ * total without saying so (working rule 7).
+ */
+export async function getValuationReport(storeId) {
+  const inv = await getStoreInventory(storeId);
+  const rows = inv.map((i) => ({
+    itemName: i.item.name, categoryKey: i.item.categoryKey, unit: i.unit,
+    currentStock: i.currentStock, unitCost: i.unitCost ?? null,
+    value: i.unitCost != null ? Math.round(i.currentStock * i.unitCost * 100) / 100 : null,
+  }));
+  const total = rows.reduce((sum, r) => sum + (r.value ?? 0), 0);
+  const missingCostCount = rows.filter((r) => r.value === null).length;
+  return { rows, total: Math.round(total * 100) / 100, missingCostCount };
 }
 
 // ---- Purchase orders (Priority 7: ordering workflow) ----------------------------

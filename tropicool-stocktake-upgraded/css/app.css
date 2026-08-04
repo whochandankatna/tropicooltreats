@@ -317,10 +317,23 @@ textarea:focus-visible, a:focus-visible, [tabindex]:focus-visible {
 .tt-more-item span { flex: 1; }
 .tt-signout-btn { width: 100%; }
 
+.tt-report-picker { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-3); }
+.tt-report-tab { min-height: var(--touch); padding: var(--sp-2) var(--sp-4); border-radius: var(--radius-pill); border: 1px solid var(--line); background: var(--card); color: var(--ink-soft); font-size: 13px; font-weight: 500; }
+.tt-report-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
 .tt-report-table-wrap { overflow-x: auto; }
 .tt-report-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .tt-report-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: var(--ink-soft); padding: var(--sp-2); border-bottom: 1px solid var(--line); }
 .tt-report-table td { padding: var(--sp-2); border-bottom: 1px solid var(--line); }
+.tt-report-actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-4); }
+
+/* ---- Print (Priority 8: "export to PDF" via the browser's own print dialog) ------ */
+@media print {
+  .tt-topbar, .tt-bottomnav, .tt-sidebar, .tt-report-picker, .tt-report-actions, .tt-toast { display: none !important; }
+  .tt-content { padding: 0; max-width: 100%; }
+  body { background: #fff; color: #000; }
+  .tt-panel { background: #fff; border: none; box-shadow: none; padding: 0; margin-bottom: var(--sp-5); }
+  .tt-report-table th, .tt-report-table td { border: 1px solid #999; color: #000; }
+}
 
 /* ---- Modal (accessible: focus trap handled in ui.js) ------------------------------- */
 .tt-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: var(--sp-4); opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 200; }

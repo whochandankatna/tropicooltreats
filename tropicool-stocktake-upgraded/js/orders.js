@@ -12,23 +12,11 @@
 import * as db from './database.js';
 import { getSession, isManager } from './auth.js';
 import { esc, icon, fmtQty, toast, confirmDialog, promptText, openModal, closeModal } from './ui.js';
-import { formatBrisbaneDate, brisbaneDateISO } from './date.js';
+import { formatBrisbaneInstant, brisbaneDateISO } from './date.js';
 import { decimalsForUnit } from './config.js';
 
 const NO_SUPPLIER = 'No supplier set';
 let selected = {}; // { [storeInventoryId]: qty } — persists across re-renders within a visit to the tab
-
-/**
- * Order timestamps are stored as full ISO instants (created_at etc, not a
- * pre-computed business-date field like session.businessDate/batch.receivedDate
- * elsewhere) — so, matching date.js's own warning against deriving a date
- * from raw UTC, this converts via brisbaneDateISO rather than naively
- * slicing the first 10 characters, which would show the wrong calendar day
- * for anything logged 10am Brisbane or earlier (still "yesterday" in UTC).
- */
-function brisbaneDateOf(isoInstant) {
-  return brisbaneDateISO(new Date(isoInstant));
-}
 
 export async function renderOrders(root) {
   const sess = getSession();
@@ -64,7 +52,7 @@ export async function renderOrders(root) {
         ${history.map((o) => `<button class="tt-order-history-row" data-open-order="${o.id}">
           <div>
             <div class="tt-list-row-name">${esc(o.supplierName)}</div>
-            <div class="tt-list-row-sub">${o.lines.length} item${o.lines.length === 1 ? '' : 's'} · ${esc(formatBrisbaneDate(brisbaneDateOf(o.createdAt)))}</div>
+            <div class="tt-list-row-sub">${o.lines.length} item${o.lines.length === 1 ? '' : 's'} · ${esc(formatBrisbaneInstant(o.createdAt))}</div>
           </div>
           <span class="tt-status-badge ${o.status}">${esc(o.status)}</span>
         </button>`).join('')}
@@ -112,10 +100,10 @@ async function createOrderFromGroup(root, supplierName, items) {
 }
 
 function orderMeta(o) {
-  if (o.status === 'sent') return `Sent ${formatBrisbaneDate(brisbaneDateOf(o.sentAt))}`;
-  if (o.status === 'received') return `Received ${formatBrisbaneDate(brisbaneDateOf(o.receivedAt))}`;
+  if (o.status === 'sent') return `Sent ${formatBrisbaneInstant(o.sentAt)}`;
+  if (o.status === 'received') return `Received ${formatBrisbaneInstant(o.receivedAt)}`;
   if (o.status === 'cancelled') return `Cancelled${o.cancelReason ? ' — ' + o.cancelReason : ''}`;
-  return `Created ${formatBrisbaneDate(brisbaneDateOf(o.createdAt))}`;
+  return `Created ${formatBrisbaneInstant(o.createdAt)}`;
 }
 
 async function openOrderDetail(root, order) {

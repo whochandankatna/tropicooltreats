@@ -117,6 +117,17 @@
     return new Intl.DateTimeFormat('en-AU', fmt).format(noonUTC);
   }
 
+  /**
+   * Human-friendly Brisbane-local formatting of a full ISO instant (e.g.
+   * occurred_at/created_at timestamps), not a pre-computed business-date
+   * field. Converts via brisbaneDateISO first rather than naively slicing
+   * the instant's UTC date -- an instant logged 10am Brisbane or earlier
+   * is still "yesterday" in UTC, which a plain slice would get wrong.
+   */
+  function formatBrisbaneInstant(isoInstant, opts) {
+    return formatBrisbaneDate(brisbaneDateISO(new Date(isoInstant)), opts);
+  }
+
   export {
     BRISBANE_TZ,
     getBrisbaneParts,
@@ -127,4 +138,5 @@
     daysBetween,
     addDays,
     formatBrisbaneDate,
+    formatBrisbaneInstant,
   };
