@@ -1,0 +1,3304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tropicool Treats - Stocktake</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Bodoni+Moda:opsz,wght@6..96,700;6..96,800;6..96,900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --sand:#E7EAF7; --sand-deep:#D9DEF2;
+    --teal:#4E6EF2; --teal-deep:#3752D6;
+    --mint:#8A8D9E; --coral:#4E6EF2; --coral-deep:#3752D6;
+    --grape:#14151C; --grape-deep:#000000;
+    --dry:#7C94F5; --dry-deep:#5B76E8;
+    --ice:#8A93B8; --ice-deep:#5B6178;
+    --sauce:#8A93B8; --sauce-deep:#5B6178;
+    --clean:#8A93B8; --clean-deep:#5B6178;
+    --frozenfruit:#8A93B8; --frozenfruit-deep:#5B6178;
+    --freshfruit:#8A93B8; --freshfruit-deep:#5B6178;
+    --premix:#8A93B8; --premix-deep:#5B6178;
+    --toppings:#8A93B8; --toppings-deep:#5B6178;
+    --packaging:#8A93B8; --packaging-deep:#5B6178;
+    --milk:#8A93B8; --milk-deep:#5B6178;
+    --juice:#8A93B8; --juice-deep:#5B6178;
+    --tiramisu:#8A93B8; --tiramisu-deep:#5B6178;
+    --important:#4E6EF2; --important-deep:#3752D6;
+    --fridgecol:#8A93B8; --fridgecol-deep:#5B6178;
+    --ink:#14151C; --ink-soft:#8A8D9E;
+    --line:rgba(20,21,28,0.08); --card:#FFFFFF;
+
+    --btn-bg-1:#1A1B22; --btn-bg-2:#000000; --btn-text:#FFFFFF;
+    --btn2-bg:#EEF0F7; --btn2-text:#14151C;
+
+    --hero-grad:linear-gradient(135deg, #3752D6 0%, #4E6EF2 45%, #7C94F5 75%, #A9BAFA 100%);
+
+    --glass-strong:rgba(255,255,255,0.9);
+    --glass-mid:rgba(255,255,255,0.8);
+    --glass-card:rgba(255,255,255,0.86);
+    --glass-soft:rgba(255,255,255,0.65);
+    --glass-modal:rgba(255,255,255,0.96);
+    --glass-border:rgba(20,21,28,0.07);
+    --glass-tab-track:rgba(20,21,28,0.05);
+    --glass-tab-hover:rgba(20,21,28,0.08);
+    --dot-color:transparent;
+    --input-focus-bg:#FFFFFF;
+    --tint-soft:rgba(20,21,28,0.045);
+    --specular:inset 0 0 0 0 transparent;
+
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px;
+    --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px;
+
+    --r-sm:10px; --r-md:16px; --r-lg:24px; --r-xl:30px; --r-pill:999px;
+
+    --shadow-sm:0 1px 3px rgba(20,21,28,0.06);
+    --shadow-md:0 10px 30px rgba(20,21,28,0.1);
+    --shadow-lg:0 26px 64px rgba(20,21,28,0.18);
+    --glow-teal:0 0 26px rgba(78,110,242,0.4), 0 0 54px rgba(78,110,242,0.16);
+    --glow-coral:0 0 24px rgba(78,110,242,0.4), 0 0 50px rgba(78,110,242,0.16);
+
+    font-family:'Jost',sans-serif;
+  }
+  html[data-theme="dark"]{
+    --sand:#0E0F14; --sand-deep:#16171E;
+    --teal:#7C94F5; --teal-deep:#4E6EF2;
+    --card:#181A22;
+    --ink:#F2F3F8; --ink-soft:#8A8D9E;
+    --line:rgba(124,148,245,0.16);
+    --btn-bg-1:#F2F3F8; --btn-bg-2:#FFFFFF; --btn-text:#0E0F14;
+    --btn2-bg:#22242E; --btn2-text:#F2F3F8;
+    --mint:#8A8D9E; --coral:#7C94F5; --coral-deep:#A9BAFA;
+    --grape:#F2F3F8; --grape-deep:#FFFFFF;
+    --dry:#A9BAFA; --dry-deep:#7C94F5;
+    --ice:#9AA2C2; --ice-deep:#C4CBE8;
+    --sauce:#9AA2C2; --sauce-deep:#C4CBE8;
+    --clean:#9AA2C2; --clean-deep:#C4CBE8;
+    --frozenfruit:#9AA2C2; --frozenfruit-deep:#C4CBE8;
+    --freshfruit:#9AA2C2; --freshfruit-deep:#C4CBE8;
+    --premix:#9AA2C2; --premix-deep:#C4CBE8;
+    --toppings:#9AA2C2; --toppings-deep:#C4CBE8;
+    --packaging:#9AA2C2; --packaging-deep:#C4CBE8;
+    --milk:#9AA2C2; --milk-deep:#C4CBE8;
+    --juice:#9AA2C2; --juice-deep:#C4CBE8;
+    --tiramisu:#9AA2C2; --tiramisu-deep:#C4CBE8;
+    --important:#7C94F5; --important-deep:#A9BAFA;
+    --fridgecol:#9AA2C2; --fridgecol-deep:#C4CBE8;
+    --glass-strong:rgba(24,26,34,0.86);
+    --glass-mid:rgba(24,26,34,0.68);
+    --glass-card:rgba(24,26,34,0.76);
+    --glass-soft:rgba(18,19,25,0.56);
+    --glass-modal:rgba(12,13,17,0.92);
+    --glass-border:rgba(124,148,245,0.2);
+    --glass-tab-track:rgba(124,148,245,0.07);
+    --glass-tab-hover:rgba(124,148,245,0.13);
+    --dot-color:transparent;
+    --input-focus-bg:#22242E;
+    --tint-soft:rgba(124,148,245,0.09);
+    --specular:inset 0 0 0 0 transparent;
+    --glow-teal:0 0 26px rgba(124,148,245,0.5), 0 0 54px rgba(124,148,245,0.2);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background-color:var(--sand);
+    background-image:
+      radial-gradient(ellipse 1500px 950px at 50% -18%, rgba(78,110,242,0.14), transparent 60%),
+      radial-gradient(ellipse 1100px 750px at 82% -8%, rgba(78,110,242,0.10), transparent 55%);
+    background-attachment:fixed;
+    transition:background-color .3s ease;
+    min-height:100vh; position:relative; overflow-x:hidden;
+  }
+  html[data-theme="dark"] body{
+    background-image:
+      radial-gradient(ellipse 1500px 950px at 50% -18%, rgba(124,148,245,0.16), transparent 60%),
+      radial-gradient(ellipse 1100px 750px at 82% -8%, rgba(124,148,245,0.10), transparent 55%);
+  }
+
+  .stk-app-shell{ display:flex; min-height:100vh; }
+  .stk-sidebar{
+    display:none; flex-direction:column; align-items:center; gap:var(--sp-2);
+    width:92px; flex-shrink:0; padding:var(--sp-5) var(--sp-2); position:sticky; top:0; height:100vh;
+    background:var(--glass-strong); backdrop-filter:blur(32px) saturate(180%); -webkit-backdrop-filter:blur(32px) saturate(180%);
+    border-right:1px solid var(--glass-border); z-index:30;
+  }
+  .stk-sidebar-logo{
+    width:40px; height:40px; border-radius:var(--r-md); background:linear-gradient(135deg,#000000 0%,var(--teal) 55%,#FFFFFF 100%);
+    color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Jost',sans-serif;
+    font-weight:500; font-size:14px; margin-bottom:var(--sp-4); box-shadow:var(--specular); flex-shrink:0;
+  }
+  .stk-sidebar-btn{
+    width:100%; padding:var(--sp-2) 4px; border-radius:var(--r-md); border:none; background:transparent;
+    color:var(--ink-soft); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; cursor:pointer;
+    transition:all .18s ease;
+  }
+  .stk-sidebar-btn svg{ width:19px; height:19px; flex-shrink:0; }
+  .stk-sidebar-btn span{ font-family:'Jost',sans-serif; font-size:10px; font-weight:500; line-height:1.15; text-align:center; }
+  .stk-sidebar-btn:hover{ background:var(--glass-tab-hover); color:var(--ink); }
+  .stk-sidebar-btn.active{ background:linear-gradient(135deg,#000000 0%,var(--teal) 55%,#FFFFFF 100%); color:#fff; box-shadow:var(--specular); }
+  .stk-sidebar-spacer{ flex:1; }
+  .stk-main-col{ flex:1; min-width:0; }
+  .stk-root{ color:var(--ink); min-height:100vh; padding:var(--sp-6) var(--sp-4) var(--sp-12); max-width:900px; margin:0 auto; position:relative; z-index:1; }
+  @media (min-width: 900px){
+    .stk-sidebar{ display:flex; }
+    .stk-hud .stk-tabs{ display:none; }
+    .stk-root{ max-width:1100px; padding:var(--sp-6) var(--sp-8) var(--sp-12); }
+  }
+
+  .stk-hud{
+    position:sticky; top:10px; z-index:20;
+    background:var(--glass-strong);
+    backdrop-filter:blur(32px) saturate(180%); -webkit-backdrop-filter:blur(32px) saturate(180%);
+    border:1px solid var(--glass-border);
+    border-radius:var(--r-xl);
+    padding:var(--sp-4) var(--sp-5) var(--sp-3);
+    margin-bottom:var(--sp-5);
+    box-shadow:var(--shadow-sm), var(--specular);
+    overflow:hidden;
+    transition:padding .25s ease;
+  }
+  .stk-hud.compact{ padding:var(--sp-2) var(--sp-5); }
+  .stk-header{ display:flex; align-items:flex-end; justify-content:space-between; gap:var(--sp-3); flex-wrap:wrap; margin-bottom:var(--sp-2); transition:margin .25s ease; }
+  .stk-hud.compact .stk-header{ margin-bottom:0; }
+  .stk-title{ font-family:'Bodoni Moda',serif; font-weight:900; font-size:26px; color:var(--ink); display:flex; align-items:center; gap:var(--sp-3); letter-spacing:0; transition:font-size .25s ease; }
+  .stk-hud.compact .stk-title{ font-size:18px; }
+  .stk-sub{ font-size:13px; color:var(--ink-soft); margin-top:2px; letter-spacing:0.1px; max-height:20px; opacity:1; overflow:hidden; transition:max-height .25s ease, opacity .2s ease, margin .25s ease; }
+  .stk-hud.compact .stk-sub{ max-height:0; opacity:0; margin-top:0; }
+  .stk-theme-toggle{
+    width:34px; height:34px; border-radius:50%; border:1px solid var(--glass-border);
+    background:var(--glass-soft); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--ink-soft); transition:all .2s ease; flex-shrink:0; padding:0;
+  }
+  .stk-theme-toggle:hover{ color:var(--ink); background:var(--glass-tab-hover); }
+  .stk-theme-toggle.active{ background:rgba(78,110,242,0.14); color:var(--teal-deep); border-color:var(--teal); }
+  .stk-theme-toggle svg{ width:17px; height:17px; }
+
+  .stk-status-strip{
+    display:flex; align-items:center; gap:var(--sp-4); flex-wrap:wrap;
+    padding:var(--sp-3) var(--sp-4); margin-bottom:var(--sp-3); border-radius:var(--r-lg);
+    background:var(--tint-soft); border:1px solid var(--line); transition:transform .25s ease, opacity .25s ease, margin .25s ease, padding .25s ease;
+  }
+  .stk-hud.compact .stk-status-strip{ max-height:0; opacity:0; margin:0; padding:0; overflow:hidden; border:none; }
+  .stk-sync{ font-size:11.5px; padding:6px 12px; border-radius:var(--r-pill); font-weight:500; letter-spacing:0.1px; background:var(--card); color:var(--ink-soft); flex-shrink:0; box-shadow:var(--shadow-sm); }
+  .stk-sync.live{ color:var(--ink); }
+  .stk-sync.live::before{ content:''; display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--teal); margin-right:7px; vertical-align:middle; animation:syncPulse 1.6s ease-in-out infinite; box-shadow:0 0 0 0 rgba(78,110,242,0.5); }
+  @keyframes syncPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(78,110,242,0.5);} 50%{ box-shadow:0 0 0 5px rgba(78,110,242,0);} }
+  .stk-sync.offline{ color:var(--coral-deep); }
+  .stk-sync.loading{ color:var(--ink-soft); }
+  .stk-health-block{ flex:1; min-width:180px; display:flex; align-items:center; gap:var(--sp-3); }
+  .stk-working-now{ display:flex; align-items:center; gap:var(--sp-2); flex-shrink:0; flex-wrap:wrap; }
+  .stk-working-now-label{ font-size:11px; font-weight:500; color:var(--ink-soft); white-space:nowrap; }
+  .stk-working-now-avatars{ display:flex; flex-wrap:wrap; gap:6px; }
+  .stk-working-name-pill{
+    font-size:11.5px; font-weight:500; color:#fff; background:linear-gradient(135deg,var(--teal),var(--teal-deep));
+    padding:4px 11px; border-radius:var(--r-pill); white-space:nowrap; flex-shrink:0;
+  }
+  .stk-working-avatar{
+    width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--teal),var(--teal-deep));
+    color:#fff; font-size:10.5px; font-weight:600; display:flex; align-items:center; justify-content:center;
+    margin-left:-8px; border:2px solid var(--card); flex-shrink:0;
+  }
+  .stk-working-avatar:first-child{ margin-left:0; }
+  .stk-health-label{ font-size:12.5px; font-weight:500; white-space:nowrap; letter-spacing:0.1px; transition:color .3s ease; color:var(--ink); flex-shrink:0; }
+  .stk-health-label.critical{ color:#DC2626; }
+  .stk-health-label.ok{ color:#16A34A; }
+  .stk-health-label.great{ color:var(--teal-deep); }
+  .stk-health-bar{ flex:1; height:6px; border-radius:var(--r-pill); background:var(--glass-tab-track); overflow:hidden; }
+  .stk-health-fill{ height:100%; border-radius:var(--r-pill); transition:width .5s ease, background .3s ease; }
+  .stk-health-fill.critical{ background:#EF4444; }
+  .stk-health-fill.ok{ background:#22C55E; }
+  .stk-health-fill.great{ background:linear-gradient(90deg,var(--teal),var(--teal-deep)); }
+  .stk-meta-line{ font-size:12px; color:var(--ink-soft); margin-bottom:var(--sp-3); max-height:20px; opacity:1; overflow:hidden; transition:max-height .25s ease, opacity .2s ease, margin .25s ease; }
+  .stk-hud.compact .stk-meta-line{ max-height:0; opacity:0; margin-bottom:0; }
+  .stk-meta-line b{ color:var(--ink); }
+  .stk-tabs{ display:flex; gap:var(--sp-1); background:var(--glass-tab-track); padding:var(--sp-1); border-radius:var(--r-lg); width:fit-content; max-width:100%; overflow-x:auto; border:1px solid var(--glass-border); transition:transform .25s ease; }
+  .stk-hud.compact .stk-tabs{ transform:scale(0.94); transform-origin:left center; }
+  .stk-tab{ font-family:'Jost',sans-serif; font-weight:600; font-size:12.5px; padding:var(--sp-2) var(--sp-3); border-radius:var(--r-md); border:none; background:transparent; color:var(--ink-soft); cursor:pointer; white-space:nowrap; transition:all .2s ease; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .stk-tab svg{ width:17px; height:17px; }
+  .stk-tab span{ line-height:1.2; }
+
+  /* Mobile layout: stack header, full-width tabs and health bar. Tablet/desktop keep the side-by-side layout above. */
+  @media (max-width: 640px){
+    .stk-hud{ padding:var(--sp-4) var(--sp-4) var(--sp-3); }
+    .stk-header{ flex-direction:row; align-items:flex-start; justify-content:space-between; gap:var(--sp-3); margin-bottom:var(--sp-3); }
+    .stk-title{ font-size:23px; }
+    .stk-status-strip{ flex-direction:column; align-items:stretch; }
+    .stk-health-block{ min-width:0; }
+    .stk-tabs{ width:100%; overflow-x:visible; padding:6px; }
+    .stk-tab{ flex:1; padding:var(--sp-3) 2px; font-size:11px; white-space:nowrap; gap:6px; }
+    .stk-tab svg{ width:22px; height:22px; }
+  }
+  .stk-tab.active{ background:linear-gradient(135deg, var(--btn-bg-1), var(--btn-bg-2)); color:var(--btn-text); box-shadow:var(--shadow-sm), var(--specular); font-weight:500; }
+  .stk-tab:hover:not(.active){ color:var(--teal-deep); background:var(--glass-tab-hover); }
+  .stk-tab:focus-visible, .stk-btn:focus-visible, .stk-input:focus-visible, .stk-cat-tile:focus-visible{ outline:2px solid var(--teal); outline-offset:2px; }
+  .stk-banner{ display:flex; align-items:center; gap:var(--sp-3); background:var(--glass-card); backdrop-filter:blur(28px) saturate(180%); -webkit-backdrop-filter:blur(28px) saturate(180%); color:var(--mint); border:1.5px solid var(--mint); padding:var(--sp-4) var(--sp-5); border-radius:var(--r-lg); margin-bottom:var(--sp-3); box-shadow:0 0 22px rgba(251,241,255,0.15), var(--specular); }
+  .stk-banner.alert{ color:var(--coral); border-color:var(--coral); box-shadow:0 0 22px rgba(78,110,242,0.3), var(--specular); }
+  .stk-banner.over{ color:var(--grape); border-color:var(--grape); box-shadow:0 0 22px rgba(20,21,28,0.3), var(--specular); }
+  .stk-banner.expiring{ color:var(--dry); border-color:var(--dry); box-shadow:0 0 22px rgba(124,148,245,0.3), var(--specular); }
+  .stk-banner-text{ color:var(--ink); }
+
+  .stk-progress-panel{ background:var(--hero-grad); border:1px solid rgba(255,255,255,0.16); border-radius:var(--r-xl); padding:var(--sp-5) var(--sp-5); margin-bottom:var(--sp-4); box-shadow:0 20px 44px rgba(55,82,214,0.3); position:relative; overflow:hidden; }
+  .stk-progress-stat{ display:flex; align-items:baseline; gap:var(--sp-4); margin-bottom:var(--sp-3); }
+  .stk-progress-num{ font-family:'Jost',sans-serif; font-weight:500; font-size:42px; color:#fff; letter-spacing:-1px; line-height:1; }
+  .stk-progress-num-of{ font-size:18px; color:rgba(255,255,255,0.65); font-weight:400; letter-spacing:0; }
+  .stk-progress-meta{ display:flex; flex-direction:column; gap:2px; }
+  .stk-progress-label{ font-size:13px; font-weight:600; color:#fff; }
+  .stk-progress-sub{ font-size:12px; color:rgba(255,255,255,0.7); }
+  .stk-progress-bar{ height:8px; border-radius:var(--r-pill); background:rgba(20,21,28,0.14); overflow:hidden; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.25); }
+  .stk-progress-fill{ height:100%; border-radius:var(--r-pill); background:#fff; transition:width .4s ease; box-shadow:0 0 0 1px rgba(20,21,28,0.3), 0 0 10px rgba(255,255,255,0.5); }
+
+  .stk-alerts-strip{
+    display:flex; gap:var(--sp-3); overflow-x:auto; overflow-y:hidden;
+    padding:var(--sp-1) 2px var(--sp-4); margin-bottom:var(--sp-1);
+    scrollbar-width:thin; -webkit-overflow-scrolling:touch;
+  }
+  .stk-alert-chip{
+    display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3);
+    flex:1 1 150px; min-width:150px; cursor:pointer; border-radius:var(--r-lg);
+    padding:var(--sp-4) var(--sp-5); font-family:'Jost',sans-serif;
+    background:var(--card); border:1px solid var(--glass-border); transition:all .2s ease; position:relative;
+    box-shadow:var(--shadow-sm);
+  }
+  .stk-alert-chip:hover, .stk-alert-chip:active{ transform:translateY(-3px); box-shadow:var(--shadow-md); }
+  .stk-alert-chip.alert:hover{ border-color:var(--coral); }
+  .stk-alert-chip.expiring:hover{ border-color:var(--dry); }
+  .stk-alert-chip.over:hover{ border-color:var(--grape); }
+  .stk-alert-chip-text{ display:flex; flex-direction:column; gap:3px; }
+  .stk-alert-chip-count{ font-family:'Jost',sans-serif; font-weight:500; font-size:26px; line-height:1; }
+  .stk-alert-chip.alert .stk-alert-chip-count{ color:var(--coral); }
+  .stk-alert-chip.expiring .stk-alert-chip-count{ color:var(--dry); }
+  .stk-alert-chip.over .stk-alert-chip-count{ color:var(--grape); }
+  .stk-alert-chip-label{ font-family:'Jost',sans-serif; font-size:10px; letter-spacing:0.6px; text-transform:uppercase; color:var(--ink-soft); }
+  .stk-alert-chip-icon{ width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(20,21,28,0.05); }
+  .stk-alert-chip-icon svg{ width:16px; height:16px; }
+  .stk-alert-chip.alert .stk-alert-chip-icon{ color:var(--coral); }
+  .stk-alert-chip.expiring .stk-alert-chip-icon{ color:var(--dry); }
+  .stk-alert-chip.over .stk-alert-chip-icon{ color:var(--grape); }
+
+  .stk-list-rows{ display:flex; flex-direction:column; gap:var(--sp-2); max-height:52vh; overflow-y:auto; margin-top:var(--sp-2); }
+  .stk-list-row{
+    display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3);
+    padding:var(--sp-3); border-radius:var(--r-md); background:var(--tint-soft);
+    cursor:pointer; transition:all .15s ease; border:1px solid var(--line);
+  }
+  .stk-list-row:hover{ background:var(--glass-tab-hover); border-color:var(--teal); }
+  .stk-list-row-name{ font-weight:600; font-size:14px; color:var(--ink); }
+  .stk-list-row-sub{ font-size:11px; color:var(--ink-soft); font-family:'Jost',sans-serif; margin-top:2px; }
+
+  .stk-diag-panel{ margin-top:var(--sp-4); margin-bottom:var(--sp-4); }
+  .stk-diag-header{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:var(--sp-4); padding-bottom:var(--sp-3); border-bottom:1px solid var(--line); }
+  .stk-diag-title{ font-family:'Jost',sans-serif; font-weight:600; font-size:15px; color:var(--ink); }
+  .stk-diag-sub{ font-family:'Jost',sans-serif; font-size:11px; color:var(--ink-soft); display:flex; align-items:center; gap:6px; }
+  .stk-diag-sub::before{ content:''; width:6px; height:6px; border-radius:50%; background:var(--mint); box-shadow:0 0 6px var(--mint); animation:diagLivePulse 1.6s ease-in-out infinite; }
+  @keyframes diagLivePulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
+  .stk-diag-rows{ display:flex; flex-direction:column; gap:var(--sp-3); }
+  .stk-diag-row{ display:flex; align-items:center; gap:var(--sp-3); cursor:pointer; padding:var(--sp-2); border-radius:var(--r-sm); transition:background .15s ease; }
+  .stk-diag-row:hover{ background:var(--tint-soft); }
+  .stk-diag-icon{ width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .stk-diag-info{ flex:1; min-width:0; }
+  .stk-diag-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
+  .stk-diag-label{ font-family:'Jost',sans-serif; font-weight:600; font-size:13px; color:var(--ink); }
+  .stk-diag-pct{ font-family:'Jost',sans-serif; font-size:12px; font-weight:500; }
+  .stk-diag-pct.critical{ color:var(--coral); }
+  .stk-diag-pct.ok{ color:var(--dry); }
+  .stk-diag-pct.great{ color:var(--mint); }
+  .stk-diag-bar-track{ height:6px; border-radius:var(--r-pill); background:var(--tint-soft); overflow:hidden; }
+  .stk-diag-bar-fill{ height:100%; border-radius:var(--r-pill); width:0; animation:diagBarGrow 1.1s cubic-bezier(.2,.8,.2,1) forwards; }
+  @keyframes diagBarGrow{ to{ width:var(--bar-target); } }
+  .stk-diag-bar-fill.critical{ background:var(--coral); box-shadow:0 0 8px var(--coral); }
+  .stk-diag-bar-fill.ok{ background:var(--dry); box-shadow:0 0 8px var(--dry); }
+  .stk-diag-bar-fill.great{ background:var(--mint); box-shadow:0 0 8px var(--mint); }
+  .stk-diag-count{ font-family:'Jost',sans-serif; font-size:13px; color:var(--ink-soft); width:24px; text-align:right; flex-shrink:0; }
+
+  .stk-balance-card{ margin-bottom:var(--sp-4); }
+  .stk-balance-top{ margin-bottom:var(--sp-6); text-align:center; }
+  .stk-balance-title{ font-size:14px; color:var(--ink-soft); font-weight:600; margin-bottom:4px; }
+  .stk-balance-total{ font-family:'Jost',sans-serif; font-weight:500; font-size:32px; color:var(--ink); }
+  .stk-balance-total span{ font-size:14px; font-weight:400; color:var(--ink-soft); }
+  .stk-balance-row{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--sp-5); }
+  .stk-balance-circles{ display:flex; align-items:center; justify-content:center; }
+  .stk-balance-circle{
+    width:104px; height:104px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:var(--glass-soft); border:none; margin-left:-22px; position:relative; z-index:1;
+    text-align:center; padding:var(--sp-2); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    box-shadow:0 1px 2px rgba(20,21,28,0.06); cursor:pointer; transition:transform .18s ease;
+  }
+  .stk-balance-circle:hover{ transform:translateY(-2px); }
+  .stk-balance-circle:first-child{ margin-left:0; }
+  .stk-balance-circle.primary{ width:132px; height:132px; background:linear-gradient(135deg,#000000 0%,var(--teal) 55%,#FFFFFF 100%); z-index:2; box-shadow:var(--glow-teal); border:none; }
+  .stk-balance-circle.primary .stk-balance-circle-num, .stk-balance-circle.primary .stk-balance-circle-label{ color:#fff; }
+  .stk-balance-circle-icon{ color:var(--ink-soft); margin-bottom:4px; opacity:0.8; }
+  .stk-balance-circle-icon svg{ width:16px; height:16px; }
+  .stk-balance-circle.primary .stk-balance-circle-icon{ color:#fff; opacity:0.9; }
+  .stk-balance-circle-num{ font-family:'Jost',sans-serif; font-weight:500; font-size:21px; color:var(--ink); line-height:1.1; }
+  .stk-balance-circle-label{ font-size:11px; color:var(--ink-soft); margin-top:3px; }
+  .stk-balance-actions{ display:flex; flex-direction:column; gap:var(--sp-2); width:100%; max-width:360px; }
+  .stk-balance-actions .stk-btn{ width:100%; text-align:center; }
+  @media (max-width:480px){
+    .stk-balance-circle{ width:82px; height:82px; margin-left:-16px; }
+    .stk-balance-circle.primary{ width:104px; height:104px; }
+    .stk-balance-circle-num{ font-size:16px; }
+  }
+
+  .stk-bento-grid{ display:grid; grid-template-columns:1fr; gap:var(--sp-4); margin-bottom:var(--sp-1); }
+  .stk-bento-cell{ display:flex; flex-direction:column; min-width:0; }
+  .stk-bento-cell .stk-panel, .stk-bento-cell .stk-progress-panel{ height:100%; margin-bottom:0; }
+
+  .stk-chart-card-title{ font-family:'Jost',sans-serif; font-weight:500; font-size:15px; color:var(--ink); margin-bottom:2px; }
+  .stk-chart-card-sub{ font-size:12px; color:var(--ink-soft); margin-bottom:var(--sp-5); }
+
+  .stk-usagechart{ display:flex; align-items:flex-end; gap:var(--sp-2); height:130px; padding-top:34px; }
+  .stk-usagechart-col{ flex:1; display:flex; flex-direction:column; align-items:center; position:relative; height:100%; }
+  .stk-usagechart-tooltip{ position:absolute; top:-28px; background:var(--ink); color:var(--sand); font-size:11px; font-weight:500; padding:4px 10px; border-radius:var(--r-pill); white-space:nowrap; z-index:2; opacity:0; pointer-events:none; transition:opacity .15s ease; }
+  .stk-usagechart-tooltip.always{ opacity:1; }
+  .stk-usagechart-col:hover .stk-usagechart-tooltip{ opacity:1; }
+  .stk-usagechart-tooltip::after{ content:''; position:absolute; bottom:-4px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-top:4px solid var(--ink); }
+  .stk-usagechart-bar-track{ flex:1; width:100%; display:flex; align-items:flex-end; }
+  .stk-usagechart-bar{ width:100%; height:var(--bar-h); border-radius:var(--r-sm) var(--r-sm) 4px 4px; background:var(--glass-tab-track); min-height:6px; animation:usageBarGrow .7s cubic-bezier(.2,.8,.2,1); transition:background .15s ease, transform .15s ease; transform-origin:bottom; }
+  .stk-usagechart-col:hover .stk-usagechart-bar{ background:var(--teal); transform:scaleY(1.02); }
+  .stk-usagechart-col:hover .stk-usagechart-bar.peak{ transform:scaleY(1.02); }
+  .stk-usagechart-bar.peak{ background:linear-gradient(180deg,var(--teal),var(--teal-deep)); box-shadow:0 4px 14px rgba(78,110,242,0.3); }
+  @keyframes usageBarGrow{ from{ height:0; } }
+  .stk-usagechart-label{ font-size:10.5px; color:var(--ink-soft); margin-top:var(--sp-2); font-weight:600; letter-spacing:0.3px; }
+
+  .stk-health-chart-card{ display:flex; flex-direction:column; }
+  .stk-health-chart-top{ display:flex; align-items:center; justify-content:space-between; }
+  .stk-health-chart-pct{ font-family:'Jost',sans-serif; font-weight:500; font-size:36px; color:#fff; line-height:1; }
+  .stk-health-chart-refresh{ width:30px; height:30px; border-radius:50%; border:none; background:rgba(255,255,255,0.2); color:#fff; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s ease; }
+  .stk-health-chart-refresh:hover{ background:rgba(255,255,255,0.32); transform:rotate(90deg); }
+  .stk-health-chart-label{ font-size:13px; color:rgba(255,255,255,0.75); margin-top:2px; margin-bottom:var(--sp-4); }
+  .stk-health-chart-svg{ flex:1; display:flex; align-items:flex-end; }
+  .stk-linechart{ width:100%; height:auto; display:block; }
+  .stk-linechart-point{ cursor:pointer; }
+  .stk-linechart-dot{ transition:r .15s ease, opacity .15s ease; }
+  .stk-linechart-point:hover .stk-linechart-dot{ r:6; opacity:1; }
+  @media (min-width:700px){
+    .stk-bento-grid{ grid-template-columns:1.3fr 1fr; }
+  }
+  .stk-banner-num{ font-family:'Jost',sans-serif; font-weight:500; font-size:26px; }
+  .stk-banner-text{ font-size:13px; opacity:0.95; }
+  .stk-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:var(--sp-4); margin-top:var(--sp-2); }
+  .stk-card{ background:var(--glass-card); backdrop-filter:blur(30px) saturate(180%); -webkit-backdrop-filter:blur(30px) saturate(180%); border:1px solid var(--glass-border); border-radius:var(--r-lg); padding:var(--sp-5); box-shadow:var(--shadow-sm), var(--specular); transition:box-shadow .2s ease, transform .2s ease; }
+  .stk-card:hover{ box-shadow:var(--shadow-md); transform:translateY(-2px); }
+  .stk-card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:var(--sp-2); margin-bottom:var(--sp-3); }
+  .stk-item-name{ font-weight:500; font-size:15px; color:var(--ink); }
+  .stk-item-unit{ font-size:11px; color:var(--ink-soft); font-family:'Jost',sans-serif; }
+  .stk-status{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; padding:var(--sp-1) var(--sp-2); border-radius:var(--r-pill); flex-shrink:0; background:var(--glass-soft); }
+  .stk-status.ok{ background:var(--glass-soft); color:var(--mint); }
+  .stk-status.low{ background:var(--glass-soft); color:var(--dry); }
+  .stk-status.reorder{ background:var(--glass-soft); color:var(--coral-deep); }
+  .stk-status.over{ background:var(--glass-soft); color:var(--grape); }
+  .stk-status.expiring{ background:rgba(124,148,245,0.28); color:var(--dry); }
+  .stk-status.expired{ background:rgba(78,110,242,0.28); color:var(--coral-deep); }
+  .stk-meter{ height:14px; border-radius:var(--r-sm); background:var(--sand-deep); overflow:hidden; margin:var(--sp-3) 0 var(--sp-2); position:relative; box-shadow:inset 0 1px 3px rgba(24,58,58,0.08); }
+  .stk-meter-fill{ height:100%; border-radius:var(--r-sm) 4px 4px var(--r-sm); background:linear-gradient(90deg,var(--mint),var(--freshfruit)); transition:width .4s ease; }
+  .stk-meter-fill.low{ background:linear-gradient(90deg,#C4A8CE,var(--dry)); }
+  .stk-meter-fill.reorder{ background:linear-gradient(90deg,#6B4A73,var(--coral)); }
+  .stk-meter-fill.over{ background:linear-gradient(90deg,#C4CBE8,var(--grape)); }
+  .stk-meter-par{ position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--ink); opacity:0.35; }
+  .stk-nums{ display:flex; justify-content:space-between; font-family:'Jost',sans-serif; font-size:12px; color:var(--ink-soft); }
+  .stk-nums b{ color:var(--ink); font-size:15px; }
+  .stk-order-line{ margin-top:var(--sp-3); font-size:12px; color:var(--coral-deep); font-weight:600; }
+
+  .stk-card-clickable{ cursor:pointer; }
+  .stk-card-tap-hint{ margin-top:var(--sp-3); font-size:11px; color:var(--ink-soft); opacity:0.7; text-align:right; }
+  .stk-card-star{ color:var(--important-deep); margin-right:4px; font-size:13px; }
+  .stk-card-clickable:hover .stk-card-tap-hint{ opacity:1; color:var(--teal-deep); }
+
+  .stk-modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.72);
+    backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center; z-index:300;
+    padding:var(--sp-4); opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .stk-modal-overlay.show{ opacity:1; pointer-events:auto; }
+  .stk-modal{
+    background:var(--glass-modal); backdrop-filter:blur(32px) saturate(180%); -webkit-backdrop-filter:blur(32px) saturate(180%);
+    border-radius:var(--r-xl); padding:var(--sp-6); max-width:420px; width:100%; max-height:85vh;
+    overflow-y:auto; box-shadow:var(--shadow-lg), var(--specular); transform:translateY(10px) scale(0.97);
+    transition:transform .2s ease; position:relative; border:1px solid var(--glass-border);
+  }
+  .stk-modal-overlay.show .stk-modal{ transform:translateY(0) scale(1); }
+  .stk-modal-close{
+    position:absolute; top:var(--sp-4); right:var(--sp-4); background:var(--tint-soft); border:none;
+    width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--ink-soft); transition:background .15s ease; flex-shrink:0;
+  }
+  .stk-modal-close:hover{ background:var(--tint-soft); }
+  .stk-modal-header{ display:flex; align-items:flex-start; gap:var(--sp-3); margin-bottom:var(--sp-4); padding-right:var(--sp-8); }
+  .stk-modal-icon{ width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin:0; }
+  .stk-modal-title{ font-family:'Jost',sans-serif; font-weight:500; font-size:18px; color:var(--ink); line-height:1.2; letter-spacing:0.3px; }
+  .stk-modal-cat{ font-size:12px; color:var(--ink-soft); margin-top:3px; }
+  .stk-star-toggle{
+    width:34px; height:34px; border-radius:50%; border:1.5px solid var(--glass-border);
+    background:var(--glass-soft); color:var(--ink-soft); font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .2s ease;
+  }
+  .stk-star-toggle:hover{ border-color:var(--important); color:var(--important-deep); }
+  .stk-star-toggle.active{ background:rgba(78,110,242,0.2); border-color:var(--important); color:var(--important-deep); }
+  .stk-modal-grid{ display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-3); margin-bottom:var(--sp-4); }
+  .stk-modal-stat{ background:var(--tint-soft); border-radius:var(--r-md); padding:var(--sp-3); }
+  .stk-modal-stat-label{ font-size:10px; text-transform:uppercase; letter-spacing:0.4px; color:var(--ink-soft); font-weight:500; margin-bottom:3px; }
+  .stk-modal-stat-value{ font-family:'Jost',sans-serif; font-size:16px; font-weight:500; color:var(--ink); }
+  .stk-modal-section-label{ font-size:11px; text-transform:uppercase; letter-spacing:0.4px; color:var(--ink-soft); font-weight:500; margin-bottom:var(--sp-2); }
+  .stk-modal-supplier{ background:var(--tint-soft); border-radius:var(--r-md); padding:var(--sp-4); margin-bottom:var(--sp-4); }
+  .stk-modal-supplier-name{ font-weight:500; font-size:15px; color:var(--ink); margin-bottom:var(--sp-2); }
+  .stk-history-bars{ display:flex; align-items:flex-end; gap:3px; height:36px; margin-top:var(--sp-2); }
+  .stk-history-bar{ flex:1; background:linear-gradient(180deg,var(--mint),var(--teal)); border-radius:2px 2px 0 0; min-width:3px; }
+  .stk-modal-actions{ display:flex; gap:var(--sp-3); flex-wrap:wrap; }
+  .stk-order-panel{ background:var(--glass-mid); backdrop-filter:blur(30px) saturate(180%); -webkit-backdrop-filter:blur(30px) saturate(180%); border:1px solid var(--glass-border); border-radius:var(--r-lg); padding:var(--sp-5); margin-bottom:var(--sp-4); box-shadow:var(--shadow-sm), var(--specular); }
+  .stk-order-actions-row{ margin-top:var(--sp-3); margin-bottom:var(--sp-2); }
+  .stk-peanut-row{ display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-3) 0; border-bottom:1px solid var(--line); }
+  .stk-peanut-row:last-child{ border-bottom:none; }
+  .stk-peanut-rank{ width:22px; height:22px; border-radius:50%; background:var(--tint-soft); color:var(--ink-soft); font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .stk-peanut-info{ flex:1; min-width:0; }
+  .stk-peanut-name-row{ display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); margin-bottom:6px; }
+  .stk-peanut-name{ font-size:14px; font-weight:500; color:var(--ink); }
+  .stk-peanut-count{ font-family:'Jost',sans-serif; font-weight:600; font-size:14px; color:var(--ink); white-space:nowrap; }
+  .stk-peanut-goal{ font-size:11px; font-weight:400; color:var(--ink-soft); }
+  .stk-peanut-count span{ display:inline-flex; margin-left:2px; }
+  .stk-peanut-icon svg{ width:14px; height:14px; color:var(--teal-deep); vertical-align:-2px; }
+  .stk-peanut-bar-track{ height:6px; border-radius:var(--r-pill); background:var(--glass-tab-track); overflow:hidden; }
+  .stk-peanut-bar-fill{ height:100%; border-radius:var(--r-pill); background:linear-gradient(90deg,var(--teal),var(--teal-deep)); transition:width .5s ease; }
+  .stk-peanut-bar-fill.reached{ background:linear-gradient(90deg,var(--dry),var(--dry-deep)); }
+  .stk-peanut-winner{ display:flex; align-items:center; gap:var(--sp-3); background:rgba(242,169,60,0.12); border:1px solid var(--dry); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); margin-bottom:var(--sp-3); font-size:13px; color:var(--ink); }
+  .stk-peanut-winner svg{ width:24px; height:24px; color:var(--dry-deep); flex-shrink:0; }
+
+  .stk-peanut-celebrate{ position:fixed; inset:0; z-index:500; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+  .stk-peanut-basket-wrap{ position:relative; width:100px; height:100px; display:flex; align-items:flex-end; justify-content:center; }
+  .stk-peanut-basket{ font-size:56px; animation:basketBounce 2s ease-in-out; filter:drop-shadow(0 8px 12px rgba(0,0,0,0.18)); }
+  .stk-peanut-flying{ position:absolute; top:0; left:50%; margin-left:-16px; font-size:32px; animation:peanutFly 1.05s cubic-bezier(.34,1.56,.64,1) forwards; }
+  .stk-peanut-plusone{ position:absolute; top:-6px; left:50%; transform:translateX(-50%); font-family:'Jost',sans-serif; font-weight:600; font-size:18px; color:var(--teal-deep); opacity:0; animation:plusOnePop 1.6s ease-out forwards; animation-delay:0.85s; }
+  .stk-peanut-celebrate-name{ margin-top:16px; font-family:'Jost',sans-serif; font-weight:500; font-size:14px; color:var(--ink); background:var(--card); padding:8px 18px; border-radius:var(--r-pill); box-shadow:var(--shadow-md); opacity:0; animation:peanutNameFade 2.2s ease forwards; }
+  @keyframes peanutFly{ 0%{ transform:translate(-40px,-80px) rotate(-30deg) scale(0.7); opacity:0; } 10%{ opacity:1; } 55%{ transform:translate(20px,-10px) rotate(180deg) scale(1.15); } 100%{ transform:translate(0,10px) rotate(320deg) scale(0.6); opacity:0; } }
+  @keyframes basketBounce{ 0%,50%{ transform:scale(1); } 58%{ transform:scale(1.18,0.82); } 68%{ transform:scale(0.9,1.1); } 78%{ transform:scale(1.05,0.96); } 100%{ transform:scale(1); } }
+  @keyframes plusOnePop{ 0%{ opacity:0; transform:translateY(0) scale(0.6); } 20%{ opacity:1; transform:translateY(-10px) scale(1.1); } 70%{ opacity:1; transform:translateY(-30px) scale(1); } 100%{ opacity:0; transform:translateY(-46px) scale(0.9); } }
+  @keyframes peanutNameFade{ 0%{ opacity:0; transform:translateY(8px); } 15%{ opacity:1; transform:translateY(0); } 82%{ opacity:1; } 100%{ opacity:0; } }
+  .stk-order-title-row{ display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3); margin-bottom:var(--sp-4); flex-wrap:wrap; }
+  .stk-order-title{ font-family:'Jost',sans-serif; font-weight:500; font-size:16px; color:var(--ink); display:flex; align-items:center; gap:var(--sp-2); margin-bottom:0; }
+  .stk-order-group{ margin-bottom:var(--sp-5); }
+  .stk-order-group:last-child{ margin-bottom:0; }
+  .stk-order-group-title{ font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-soft); display:flex; align-items:center; gap:var(--sp-2); margin-bottom:var(--sp-2); padding-bottom:var(--sp-2); border-bottom:1px solid var(--line); }
+  .stk-order-group-title svg{ width:14px; height:14px; flex-shrink:0; }
+  .stk-order-row{ display:flex; flex-direction:column; gap:var(--sp-3); padding:var(--sp-3) 0; border-bottom:1px solid var(--line); }
+  .stk-order-row:last-child{ border-bottom:none; }
+  .stk-order-row-top{ display:flex; align-items:center; gap:var(--sp-3); }
+  .stk-order-row-icon{ width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(78,110,242,0.14); color:var(--teal-deep); }
+  .stk-order-row-main{ flex:1; min-width:0; }
+  .stk-order-row-name{ font-weight:500; font-size:14px; color:var(--ink); }
+  .stk-order-row-sub{ font-size:12px; color:var(--ink-soft); font-family:'Jost',sans-serif; margin-top:2px; }
+  .stk-order-btn{ font-family:'Jost',sans-serif; font-weight:500; font-size:13px; background:linear-gradient(135deg, var(--btn-bg-1), var(--btn-bg-2)); color:var(--btn-text); border:1px solid rgba(20,21,28,0.12); padding:var(--sp-3) var(--sp-4); border-radius:var(--r-pill); cursor:pointer; text-decoration:none; white-space:nowrap; transition:all .18s ease; display:flex; align-items:center; justify-content:center; gap:5px; width:100%; box-shadow:var(--specular); }
+  .stk-order-btn:hover{ background:linear-gradient(135deg, var(--btn-bg-2), var(--btn-bg-1)); color:var(--btn-text); box-shadow:var(--glow-teal); transform:translateY(-1px); }
+
+  .stk-roster-daypills{ display:flex; gap:var(--sp-2); overflow-x:auto; padding-bottom:var(--sp-4); margin-bottom:var(--sp-4); border-bottom:1px solid var(--line); }
+  .stk-roster-daypill{ display:flex; flex-direction:column; align-items:center; gap:2px; flex-shrink:0; padding:var(--sp-2) var(--sp-3); border-radius:var(--r-md); border:1px solid var(--line); background:var(--card); color:var(--ink-soft); font-size:12px; font-weight:500; cursor:pointer; transition:all .15s ease; min-width:52px; }
+  .stk-roster-daypill:hover{ background:var(--glass-tab-hover); }
+  .stk-roster-daypill.today{ background:var(--teal); border-color:var(--teal); color:#fff; }
+  .stk-roster-daypill span{ font-size:10px; opacity:0.75; }
+  .stk-roster-day{ margin-bottom:var(--sp-5); scroll-margin-top:80px; }
+  .stk-roster-day:last-child{ margin-bottom:0; }
+  .stk-roster-day-title{ display:flex; align-items:center; gap:8px; font-family:'Jost',sans-serif; font-weight:500; font-size:14px; color:var(--ink); margin-bottom:var(--sp-3); padding-bottom:var(--sp-2); border-bottom:1px solid var(--line); }
+  .stk-roster-day.today .stk-roster-day-name{ color:var(--teal-deep); }
+  .stk-roster-day-date{ font-size:12px; color:var(--ink-soft); font-weight:400; }
+  .stk-roster-headcount{ margin-left:auto; background:var(--tint-soft); color:var(--ink-soft); padding:3px 10px; border-radius:var(--r-pill); font-size:11px; white-space:nowrap; }
+  .stk-roster-empty{ font-size:13px; color:var(--ink-soft); font-style:italic; padding:var(--sp-2) 0; }
+  .stk-roster-row{ display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-2) 0; }
+  .stk-roster-row-main{ flex:1; min-width:0; }
+  .stk-roster-row-name{ font-size:14px; font-weight:500; color:var(--ink); }
+  .stk-roster-row-time{ font-size:12px; color:var(--ink-soft); margin-top:1px; }
+  .stk-roster-row-dot{ width:8px; height:8px; border-radius:50%; background:var(--ink-soft); opacity:0.35; flex-shrink:0; }
+  .stk-roster-row-dot.live{ background:var(--teal); opacity:1; box-shadow:0 0 0 0 rgba(78,110,242,0.5); animation:syncPulse 1.6s ease-in-out infinite; }
+  .stk-live-badge{ font-size:9px; font-weight:600; color:var(--teal-deep); background:rgba(78,110,242,0.12); padding:2px 7px; border-radius:var(--r-pill); letter-spacing:0.4px; vertical-align:middle; }
+  .stk-order-btn.muted{ background:transparent; color:var(--ink-soft); border:1.5px dashed var(--line); }
+  .stk-supplier-note{ font-size:12px; color:var(--ink-soft); font-style:italic; padding-left:46px; text-decoration:none; }
+  .stk-supplier-note.has-link{ color:var(--teal-deep); font-style:normal; font-weight:500; }
+  .stk-supplier-note.has-link:hover{ text-decoration:underline; }
+  .stk-supplier-note.homemade{ color:var(--dry-deep); }
+  .stk-order-btn.muted:hover{ border-color:var(--coral); color:var(--coral-deep); box-shadow:none; transform:none; }
+  .stk-over-line{ margin-top:var(--sp-3); font-size:12px; color:var(--grape-deep); font-weight:600; }
+  .stk-panel{ background:var(--glass-strong); backdrop-filter:blur(30px) saturate(180%); -webkit-backdrop-filter:blur(30px) saturate(180%); border:1px solid var(--glass-border); border-radius:var(--r-lg); padding:var(--sp-5); box-shadow:var(--shadow-sm), var(--specular); }
+  .stk-entry-row{ display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:var(--sp-3); align-items:center; padding:var(--sp-3) 0; border-bottom:1px solid var(--line); }
+  .stk-entry-row.head{ font-size:11px; text-transform:uppercase; letter-spacing:0.4px; color:var(--ink-soft); font-weight:500; }
+  .stk-entry-row:last-of-type{ border-bottom:none; }
+  .stk-entry-name{ font-weight:600; font-size:14px; }
+  .stk-entry-name span{ display:block; font-size:11px; color:var(--ink-soft); font-weight:400; font-family:'Jost',sans-serif; }
+  .stk-input{ width:100%; padding:var(--sp-2) var(--sp-3); border-radius:var(--r-sm); border:1px solid var(--line); font-family:'Jost',sans-serif; font-size:14px; background:var(--sand); color:var(--ink); transition:border-color .15s ease, box-shadow .15s ease; min-height:40px; }
+  .stk-input:focus{ outline:none; border-color:var(--teal); background:var(--input-focus-bg); box-shadow:0 0 0 3px rgba(14,140,135,0.15); }
+  .stk-input.mini{ padding:var(--sp-2); font-size:13px; min-height:34px; }
+  select.stk-input{
+    font-family:'Jost',sans-serif; font-weight:500;
+    appearance:none; -webkit-appearance:none; -moz-appearance:none;
+    padding-right:36px; cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230A6663' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 10px center; background-size:15px; background-color:var(--sand);
+  }
+  select.stk-input.mini{ padding-right:26px; background-size:12px; background-position:right 6px center; }
+  .stk-usage{ font-family:'Jost',sans-serif; font-size:13px; color:var(--ink-soft); text-align:center; }
+  .stk-btn{ font-family:'Jost',sans-serif; font-weight:500; font-size:14px; background:linear-gradient(135deg, var(--btn-bg-1), var(--btn-bg-2)); color:var(--btn-text); border:1px solid rgba(20,21,28,0.12); padding:var(--sp-3) var(--sp-5); border-radius:var(--r-pill); cursor:pointer; transition:all .18s ease; min-height:42px; box-shadow:var(--specular); }
+  .stk-btn:hover{ background:linear-gradient(135deg, var(--btn-bg-2), var(--btn-bg-1)); box-shadow:var(--glow-teal), var(--specular); transform:translateY(-1px); }
+  .stk-btn.ghost{ background:var(--btn2-bg); color:var(--btn2-text); border:1px solid transparent; box-shadow:none; }
+  .stk-btn.ghost:hover{ background:var(--glass-tab-hover); box-shadow:none; transform:none; }
+  .stk-btn.danger{ background:transparent; color:var(--coral-deep); border:1px solid var(--coral); }
+  .stk-btn.danger:hover{ background:rgba(78,110,242,0.14); box-shadow:none; transform:none; }
+  .stk-btn:disabled{ opacity:0.5; cursor:not-allowed; transform:none; box-shadow:none; }
+  .stk-actions{ display:flex; justify-content:flex-end; gap:var(--sp-3); margin-top:var(--sp-4); flex-wrap:wrap; }
+  .stk-empty{ text-align:center; padding:var(--sp-10) var(--sp-5); color:var(--ink-soft); font-size:14px; }
+  .stk-empty b{ display:block; color:var(--ink); font-size:16px; margin-bottom:var(--sp-2); font-family:'Jost',sans-serif; }
+  .stk-form{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:var(--sp-3); margin-bottom:var(--sp-4); }
+  .stk-field label{ font-size:11px; font-weight:500; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.3px; display:block; margin-bottom:var(--sp-1); }
+  .stk-field .hint{ font-size:10px; color:var(--ink-soft); margin-top:var(--sp-1); }
+  .stk-items-table{ width:100%; border-collapse:collapse; margin-top:var(--sp-2); }
+  .stk-items-table th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.3px; color:var(--ink-soft); padding:var(--sp-2); border-bottom:1px solid var(--line); }
+  .stk-items-table td{ padding:var(--sp-2); border-bottom:1px solid var(--line); font-size:13px; vertical-align:middle; }
+  .stk-items-table tr:last-child td{ border-bottom:none; }
+  .stk-table-wrap{ overflow-x:auto; }
+
+  .stk-subtabs{ display:flex; gap:var(--sp-2); margin-bottom:var(--sp-4); flex-wrap:wrap; }
+  .stk-subtab{ font-family:'Jost',sans-serif; font-weight:600; font-size:13px; padding:var(--sp-2) var(--sp-4); border-radius:var(--r-pill); border:1px solid var(--glass-border); background:var(--glass-soft); color:var(--ink-soft); cursor:pointer; transition:all .2s ease; }
+  .stk-subtab.active{ background:linear-gradient(135deg,var(--teal),var(--mint)); color:#fff; border-color:transparent; box-shadow:var(--glow-teal); }
+  .stk-subtab:hover:not(.active){ background:var(--glass-mid); color:var(--teal-deep); }
+
+  .stk-collapsible-header{ display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
+  .stk-collapsible-caret{ transition:transform .25s ease; color:var(--ink-soft); font-size:12px; flex-shrink:0; }
+  .stk-collapsible-caret.open{ transform:rotate(180deg); }
+  .stk-collapsible-body{ max-height:0; overflow:hidden; transition:max-height .35s ease, opacity .25s ease; opacity:0; }
+  .stk-collapsible-body.open{ max-height:2400px; opacity:1; }
+  .stk-toast{ position:fixed; bottom:var(--sp-5); left:50%; transform:translateX(-50%) translateY(10px); background:var(--glass-strong); backdrop-filter:blur(28px) saturate(180%); -webkit-backdrop-filter:blur(28px) saturate(180%); border:1px solid var(--teal); color:var(--ink); padding:var(--sp-3) var(--sp-5); border-radius:var(--r-md); font-size:13px; text-align:center; opacity:0; transition:all .3s ease; pointer-events:none; z-index:999; white-space:nowrap; box-shadow:var(--glow-teal); }
+  .stk-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .stk-legend{ display:flex; gap:var(--sp-4); flex-wrap:wrap; margin:var(--sp-1) 0 var(--sp-3); font-size:11px; color:var(--ink-soft); }
+  .stk-legend span{ display:inline-flex; align-items:center; gap:var(--sp-1); }
+  .stk-dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .stk-note{ font-size:12px; color:var(--ink-soft); margin-top:var(--sp-4); line-height:1.6; background:var(--glass-soft); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); border-radius:var(--r-md); padding:var(--sp-2) var(--sp-4); }
+  .stk-loading{ text-align:center; padding:var(--sp-12) var(--sp-5); color:var(--ink-soft); }
+  .stk-loading b{ display:block; font-family:'Jost',sans-serif; font-size:18px; color:var(--ink); margin-bottom:var(--sp-2); }
+  .stk-cat-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:var(--sp-4); margin:var(--sp-3) 0 var(--sp-6); }
+  .stk-section-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:var(--sp-4); margin:0 0 var(--sp-6); }
+  .stk-section-tile{
+    background:var(--glass-card); backdrop-filter:blur(22px) saturate(180%); -webkit-backdrop-filter:blur(22px) saturate(180%);
+    border:1px solid var(--glass-border); border-radius:var(--r-xl); padding:var(--sp-6) var(--sp-4);
+    text-align:center; cursor:pointer; position:relative; box-shadow:var(--shadow-sm);
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .stk-section-tile:hover{ transform:translateY(-4px); box-shadow:var(--shadow-md); }
+  .stk-section-tile-icon{ width:52px; height:52px; border-radius:50%; background:rgba(78,110,242,0.1); color:var(--teal-deep); display:flex; align-items:center; justify-content:center; margin:0 auto var(--sp-3); }
+  .stk-section-tile-icon svg{ width:22px; height:22px; }
+  .stk-section-tile-label{ font-family:'Jost',sans-serif; font-weight:600; font-size:14px; color:var(--ink); }
+  .stk-cat-tile{
+    background:var(--glass-card);
+    backdrop-filter:blur(30px) saturate(180%); -webkit-backdrop-filter:blur(30px) saturate(180%);
+    border:1px solid var(--glass-border); border-radius:var(--r-xl); padding:var(--sp-6) var(--sp-4);
+    text-align:center; cursor:pointer; position:relative; box-shadow:var(--shadow-sm), var(--specular);
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .stk-cat-tile:hover{ transform:translateY(-4px); }
+  .stk-cat-tile.dry:hover, .stk-cat-tile.dry.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.fridge:hover, .stk-cat-tile.fridge.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.frozen:hover, .stk-cat-tile.frozen.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.sauces:hover, .stk-cat-tile.sauces.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.cleaning:hover, .stk-cat-tile.cleaning.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.frozenfruit:hover, .stk-cat-tile.frozenfruit.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.freshfruit:hover, .stk-cat-tile.freshfruit.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.premix:hover, .stk-cat-tile.premix.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.toppings:hover, .stk-cat-tile.toppings.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.packaging:hover, .stk-cat-tile.packaging.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.milk:hover, .stk-cat-tile.milk.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.juices:hover, .stk-cat-tile.juices.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.tiramisus:hover, .stk-cat-tile.tiramisus.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.important:hover, .stk-cat-tile.important.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.freezer:hover, .stk-cat-tile.freezer.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile.shelf:hover, .stk-cat-tile.shelf.tapped{ box-shadow:0 10px 28px rgba(78,110,242,0.32); }
+  .stk-cat-tile:active{ transform:translateY(-1px) scale(0.98); }
+  .stk-cat-tile.tapped{ animation:catTapPop .4s ease; }
+  @keyframes catTapPop{ 0%{transform:scale(1);} 35%{transform:scale(0.94) translateY(-1px);} 65%{transform:scale(1.05) translateY(-4px);} 100%{transform:scale(1) translateY(-3px);} }
+  .stk-cat-icon{ width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto var(--sp-3); transition:transform .2s ease; }
+  .stk-cat-icon.dry, .stk-cat-icon.fridge, .stk-cat-icon.frozen, .stk-cat-icon.sauces,
+  .stk-cat-icon.cleaning, .stk-cat-icon.frozenfruit, .stk-cat-icon.freshfruit, .stk-cat-icon.premix,
+  .stk-cat-icon.toppings, .stk-cat-icon.packaging, .stk-cat-icon.milk, .stk-cat-icon.juices,
+  .stk-cat-icon.tiramisus, .stk-cat-icon.important, .stk-cat-icon.freezer, .stk-cat-icon.shelf{
+    background:var(--tint-soft); color:var(--ink);
+  }
+  .stk-cat-icon svg{ animation:iconBreathe 3.2s ease-in-out infinite; transform-origin:center; }
+  @keyframes iconBreathe{ 0%,100%{ opacity:0.7; transform:scale(1); } 50%{ opacity:1; transform:scale(1.1); } }
+  .stk-cat-tile:hover .stk-cat-icon{ transform:scale(1.08); }
+  .stk-cat-icon svg{ transform-origin:50% 50%; }
+  .stk-cat-tile:hover .stk-cat-icon.dry svg, .stk-cat-icon.dry svg.play{ animation:dryPop .55s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.fridge svg, .stk-cat-icon.fridge svg.play{ animation:fridgeJiggle .55s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.frozen svg, .stk-cat-icon.frozen svg.play{ animation:frozenSpin .7s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.sauces svg, .stk-cat-icon.sauces svg.play{ animation:dryPop .55s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.cleaning svg, .stk-cat-icon.cleaning svg.play{ animation:fridgeJiggle .55s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.frozenfruit svg, .stk-cat-icon.frozenfruit svg.play{ animation:frozenSpin .7s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.freshfruit svg, .stk-cat-icon.freshfruit svg.play{ animation:dryPop .55s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.premix svg, .stk-cat-icon.premix svg.play{ animation:fridgeJiggle .55s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.toppings svg, .stk-cat-icon.toppings svg.play{ animation:dryPop .55s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.packaging svg, .stk-cat-icon.packaging svg.play{ animation:dryPop .55s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.milk svg, .stk-cat-icon.milk svg.play{ animation:fridgeJiggle .55s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.juices svg, .stk-cat-icon.juices svg.play{ animation:fridgeJiggle .55s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.tiramisus svg, .stk-cat-icon.tiramisus svg.play{ animation:dryPop .55s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.important svg, .stk-cat-icon.important svg.play{ animation:dryPop .55s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.freezer svg, .stk-cat-icon.freezer svg.play{ animation:frozenSpin .7s ease; }
+  .stk-cat-tile:hover .stk-cat-icon.shelf svg, .stk-cat-icon.shelf svg.play{ animation:dryPop .55s ease; }
+  @keyframes dryPop{ 0%{transform:translateY(0) rotate(0);} 30%{transform:translateY(-3px) rotate(-6deg);} 60%{transform:translateY(-4px) rotate(5deg);} 100%{transform:translateY(0) rotate(0);} }
+  @keyframes fridgeJiggle{ 0%{transform:scale(1) skewY(0);} 30%{transform:scale(1.06) skewY(-3deg);} 60%{transform:scale(1.04) skewY(2deg);} 100%{transform:scale(1) skewY(0);} }
+  @keyframes frozenSpin{ from{transform:rotate(0);} to{transform:rotate(180deg);} }
+  .stk-cat-badge{ position:absolute; top:var(--sp-3); right:var(--sp-3); background:#3752D6; color:#fff; font-size:11px; font-weight:500; padding:3px var(--sp-3); border-radius:var(--r-pill); animation:badgePulse 2.2s ease-in-out infinite; }
+  .stk-cat-done{ position:absolute; top:var(--sp-3); right:var(--sp-3); background:rgba(155,201,138,0.35); color:var(--freshfruit-deep); font-size:11px; font-weight:500; padding:3px var(--sp-3); border-radius:var(--r-pill); }
+  @keyframes badgePulse{ 0%{box-shadow:0 0 0 0 rgba(78,110,242,0.45);} 70%{box-shadow:0 0 0 7px rgba(78,110,242,0);} 100%{box-shadow:0 0 0 0 rgba(78,110,242,0);} }
+  .stk-cat-label{ font-family:'Jost',sans-serif; font-weight:600; font-size:15px; letter-spacing:-0.1px; }
+  .stk-cat-count{ font-size:12px; color:var(--ink-soft); margin-top:var(--sp-1); font-family:'Jost',sans-serif; }
+
+
+  .stk-back{ display:inline-flex; align-items:center; gap:var(--sp-1); font-size:13px; font-weight:500; color:var(--teal-deep); background:none; border:none; cursor:pointer; margin-bottom:var(--sp-4); padding:var(--sp-1) 0; }
+  .stk-back:hover{ text-decoration:underline; }
+  .stk-signoff{ margin-top:var(--sp-4); padding-top:var(--sp-4); border-top:1px solid var(--line); }
+  .stk-signoff label{ font-size:11px; font-weight:500; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.3px; display:block; margin-bottom:var(--sp-1); }
+  .stk-signoff input{ max-width:280px; }
+  .stk-staff-picker{ display:flex; gap:var(--sp-2); flex-wrap:wrap; }
+  .stk-staff-chip{
+    font-family:'Jost',sans-serif; font-weight:500; font-size:13px; padding:8px 16px;
+    border-radius:var(--r-pill); border:1px solid var(--line); background:var(--card); color:var(--ink);
+    cursor:pointer; transition:all .15s ease;
+  }
+  .stk-staff-chip:hover{ background:var(--glass-tab-hover); }
+  .stk-staff-chip.active{ background:linear-gradient(135deg, var(--btn-bg-1), var(--btn-bg-2)); color:var(--btn-text); border-color:transparent; }
+  .stk-entry-search{
+    display:flex; align-items:center; gap:var(--sp-3); background:var(--glass-strong);
+    backdrop-filter:blur(28px) saturate(180%); -webkit-backdrop-filter:blur(28px) saturate(180%);
+    border:1px solid var(--glass-border); border-radius:var(--r-pill); padding:var(--sp-3) var(--sp-4);
+    margin-bottom:var(--sp-4); box-shadow:var(--shadow-sm);
+  }
+  .stk-entry-search svg{ width:18px; height:18px; color:var(--ink-soft); flex-shrink:0; }
+  .stk-entry-search input{ flex:1; border:none; background:transparent; outline:none; font-family:'Jost',sans-serif; font-size:15px; color:var(--ink); padding:0; }
+  .stk-entry-search-clear{ width:22px; height:22px; border-radius:50%; border:none; background:var(--tint-soft); color:var(--ink-soft); cursor:pointer; flex-shrink:0; font-size:11px; display:flex; align-items:center; justify-content:center; }
+  .stk-quick-actions{ display:flex; gap:var(--sp-3); margin-bottom:var(--sp-4); }
+  .stk-quick-actions .stk-btn{ flex:1; }
+  .stk-section-label{ font-family:'Jost',sans-serif; font-weight:600; font-size:11.5px; letter-spacing:0.8px; text-transform:uppercase; color:var(--ink-soft); margin:var(--sp-8) 0 var(--sp-3); }
+  .stk-section-label:first-child{ margin-top:0; }
+  .stk-announce-form textarea.stk-input{ resize:vertical; min-height:56px; font-family:'Jost',sans-serif; }
+  .stk-announce-feed{ margin-top:var(--sp-4); display:flex; flex-direction:column; gap:var(--sp-3); }
+  .stk-announce-row{ padding:var(--sp-3); background:var(--tint-soft); border-radius:var(--r-md); border:1px solid var(--line); }
+  .stk-announce-msg{ font-size:14px; color:var(--ink); line-height:1.5; }
+  .stk-announce-meta{ display:flex; align-items:center; gap:var(--sp-2); margin-top:6px; font-size:11.5px; color:var(--ink-soft); }
+  .stk-announce-delete{ margin-left:auto; background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:11px; padding:2px 6px; border-radius:50%; }
+  .stk-announce-delete:hover{ color:var(--coral-deep); background:var(--card); }
+  .stk-row-highlight{ animation:rowFlash 2s ease; }
+  @keyframes rowFlash{ 0%{ background:rgba(78,110,242,0.35); } 100%{ background:transparent; } }
+  .stk-search{ position:relative; margin-bottom:var(--sp-4); }
+  .stk-search input{ padding-left:38px; }
+  .stk-search-icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--ink-soft); pointer-events:none; }
+  .stk-supplier-stack{ display:flex; flex-direction:column; gap:4px; min-width:130px; }
+
+  .stk-voice{ margin:var(--sp-3) 0 var(--sp-4); }
+  .stk-mic-btn{
+    font-family:'Jost',sans-serif; font-weight:500; font-size:14px;
+    background:linear-gradient(135deg, var(--btn-bg-1), var(--btn-bg-2));
+    color:var(--sand); border:1px solid rgba(20,21,28,0.12);
+    padding:var(--sp-3) var(--sp-5); border-radius:var(--r-pill); cursor:pointer;
+    display:inline-flex; align-items:center; gap:8px; transition:all .2s ease;
+    min-height:42px; box-shadow:var(--specular);
+  }
+  .stk-mic-btn:hover{ box-shadow:var(--glow-teal), var(--specular); transform:translateY(-1px); }
+  .stk-mic-btn.listening{ background:var(--teal-deep); color:#fff; animation:micPulse 1.4s ease-in-out infinite; }
+  @keyframes micPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(78,110,242,0.5); } 50%{ box-shadow:0 0 0 10px rgba(78,110,242,0); } }
+  .stk-voice-transcript{
+    margin-top:var(--sp-2); font-size:13px; color:var(--ink-soft); font-style:italic;
+    opacity:0; transition:opacity .2s ease; min-height:18px;
+  }
+  .stk-voice-transcript.show{ opacity:1; }
+  .stk-voice-unsupported{ font-size:12px; color:var(--ink-soft); display:flex; align-items:center; gap:8px; background:var(--tint-soft); padding:var(--sp-2) var(--sp-3); border-radius:var(--r-md); }
+
+  .stk-splash{
+    position:fixed; inset:0; z-index:1000; background:var(--sand);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transition:opacity .55s ease; opacity:1;
+  }
+  .stk-splash.hide{ opacity:0; pointer-events:none; }
+  .stk-splash-logo{
+    width:72px; height:72px; border-radius:var(--r-lg);
+    background:linear-gradient(135deg,#000000 0%,var(--teal) 55%,#FFFFFF 100%);
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    font-family:'Jost',sans-serif; font-weight:600; font-size:26px;
+    box-shadow:var(--glow-teal); margin-bottom:var(--sp-4);
+    animation:splashLogoIn .7s cubic-bezier(.2,.8,.2,1);
+  }
+  .stk-splash-greeting{
+    font-family:'Jost',sans-serif; font-weight:400; font-size:15px; color:var(--ink-soft);
+    opacity:0; animation:splashFadeUp .6s ease forwards; animation-delay:.25s;
+  }
+  .stk-splash-title{
+    font-family:'Bodoni Moda',serif; font-weight:900; font-size:29px; color:var(--ink); margin-top:4px;
+    opacity:0; animation:splashFadeUp .6s ease forwards; animation-delay:.42s;
+  }
+  .stk-splash-dots{ display:flex; gap:6px; margin-top:var(--sp-6); opacity:0; animation:splashFadeUp .5s ease forwards; animation-delay:.68s; }
+  .stk-splash-dots span{ width:6px; height:6px; border-radius:50%; background:var(--teal); animation:splashDotPulse 1.2s ease-in-out infinite; }
+  .stk-splash-dots span:nth-child(2){ animation-delay:.15s; }
+  .stk-splash-dots span:nth-child(3){ animation-delay:.3s; }
+
+  .stk-pin-lock{
+    position:fixed; inset:0; z-index:1100; background:var(--sand);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--sp-2);
+  }
+  .stk-pin-lock.shake{ animation:pinShake .4s ease; }
+  @keyframes pinShake{ 0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-10px); } 40%{ transform:translateX(10px); } 60%{ transform:translateX(-6px); } 80%{ transform:translateX(6px); } }
+  .stk-pin-lock-logo{
+    width:60px; height:60px; border-radius:var(--r-lg);
+    background:linear-gradient(135deg,#000000 0%,var(--teal) 55%,#FFFFFF 100%);
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    font-family:'Jost',sans-serif; font-weight:600; font-size:22px; margin-bottom:var(--sp-2);
+  }
+  .stk-pin-lock-title{ font-family:'Jost',sans-serif; font-weight:500; font-size:16px; color:var(--ink); margin-bottom:var(--sp-4); }
+  .stk-pin-dots{ display:flex; gap:var(--sp-3); margin-bottom:var(--sp-2); }
+  .stk-pin-dots span{ width:14px; height:14px; border-radius:50%; border:1.5px solid var(--line); background:transparent; transition:all .15s ease; }
+  .stk-pin-dots span.filled{ background:var(--teal); border-color:var(--teal); }
+  .stk-pin-error{ height:18px; font-size:12px; color:var(--coral-deep); margin-bottom:var(--sp-4); }
+  .stk-pin-keypad{ display:grid; grid-template-columns:repeat(3,64px); gap:var(--sp-3); }
+  .stk-pin-key{
+    width:64px; height:64px; border-radius:50%; border:1px solid var(--glass-border);
+    background:var(--glass-card); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    font-family:'Jost',sans-serif; font-weight:500; font-size:22px; color:var(--ink); cursor:pointer;
+    transition:all .12s ease;
+  }
+  .stk-pin-key:active{ background:var(--teal); color:#fff; transform:scale(0.94); }
+  .stk-staff-pin-row{ display:flex; gap:var(--sp-2); flex-wrap:wrap; margin-top:var(--sp-2); }
+  @keyframes splashLogoIn{ 0%{ transform:scale(0.7); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+  @keyframes splashFadeUp{ 0%{ opacity:0; transform:translateY(8px); } 100%{ opacity:1; transform:translateY(0); } }
+  @keyframes splashDotPulse{ 0%,100%{ opacity:0.3; transform:scale(0.8); } 50%{ opacity:1; transform:scale(1.15); } }
+</style>
+</head>
+<body>
+<script>
+  try{
+    const savedTheme = localStorage.getItem('tt_theme');
+    const wantsDark = savedTheme ? savedTheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if(wantsDark){
+      document.documentElement.setAttribute('data-theme','dark');
+    }
+  }catch(e){}
+</script>
+<div class="stk-splash" id="stkSplash">
+  <div class="stk-splash-logo">TT</div>
+  <div class="stk-splash-greeting" id="stkSplashGreeting">Welcome</div>
+  <div class="stk-splash-title">Tropicool Treats</div>
+  <div class="stk-splash-dots"><span></span><span></span><span></span></div>
+</div>
+<script>
+  (function(){
+    var hour = new Date().getHours();
+    var g = hour < 5 ? 'Working late' : hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    var el = document.getElementById('stkSplashGreeting');
+    if(el) el.textContent = g;
+  })();
+</script>
+<div class="stk-app-shell">
+  <nav class="stk-sidebar">
+    <div class="stk-sidebar-logo">TT</div>
+    <button class="stk-sidebar-btn active" data-tab="dashboard" title="Dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="11" width="8" height="10" rx="2"/><rect x="3" y="14" width="8" height="7" rx="2"/></svg>
+      <span>Dashboard</span>
+    </button>
+    <button class="stk-sidebar-btn" data-tab="entry" title="Stocktake">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6a1 1 0 0 1 1 1v1H8V4a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="16" rx="2"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></svg>
+      <span>Stocktake</span>
+    </button>
+    <button class="stk-sidebar-btn" data-tab="items" title="Items &amp; thresholds">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-4 9 4-9 4-9-4z"/><path d="M3 8v8l9 4 9-4V8"/><path d="M12 12v8"/></svg>
+      <span>Items</span>
+    </button>
+    <button class="stk-sidebar-btn" data-tab="roster" title="Roster">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+      <span>Roster</span>
+    </button>
+    <button class="stk-sidebar-btn" data-tab="cash" title="Cash">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="3.2"/><line x1="6" y1="9.5" x2="6" y2="9.5"/><line x1="18" y1="15.5" x2="18" y2="15.5"/></svg>
+      <span>Cash</span>
+    </button>
+    <div class="stk-sidebar-spacer"></div>
+    <button class="stk-sidebar-btn" id="stkSidebarThemeToggle" title="Toggle theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg>
+      <span>Theme</span>
+    </button>
+  </nav>
+  <div class="stk-main-col">
+<div class="stk-root">
+  <div class="stk-hud">
+    <div class="stk-header">
+      <div>
+        <div class="stk-title">Tropicool Treats</div>
+        <div class="stk-sub">Mooloolaba store &middot; daily stocktake tracker</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="stk-theme-toggle" id="stkNotifyToggle" aria-label="Enable notifications" title="Enable notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        </button>
+        <button class="stk-theme-toggle" id="stkThemeToggle" aria-label="Toggle dark mode"></button>
+      </div>
+    </div>
+    <div class="stk-status-strip">
+      <div class="stk-sync loading" id="stkSync">Connecting...</div>
+      <div class="stk-working-now" id="stkWorkingNow" style="display:none;">
+        <span class="stk-working-now-label">Working now</span>
+        <div class="stk-working-now-avatars" id="stkWorkingAvatars"></div>
+      </div>
+      <div class="stk-health-block" id="stkHealth">
+        <span class="stk-health-label" id="stkHealthLabel">Loading...</span>
+        <div class="stk-health-bar"><div class="stk-health-fill" id="stkHealthFill" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="stk-meta-line" id="stkMetaLine"></div>
+
+    <div class="stk-tabs">
+      <button class="stk-tab active" data-tab="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="11" width="8" height="10" rx="2"/><rect x="3" y="14" width="8" height="7" rx="2"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="stk-tab" data-tab="entry">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6a1 1 0 0 1 1 1v1H8V4a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="16" rx="2"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></svg>
+        <span>Stocktake</span>
+      </button>
+      <button class="stk-tab" data-tab="items">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-4 9 4-9 4-9-4z"/><path d="M3 8v8l9 4 9-4V8"/><path d="M12 12v8"/></svg>
+        <span>Items</span>
+      </button>
+      <button class="stk-tab" data-tab="roster">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+        <span>Roster</span>
+      </button>
+      <button class="stk-tab" data-tab="cash">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="3.2"/><line x1="6" y1="9.5" x2="6" y2="9.5"/><line x1="18" y1="15.5" x2="18" y2="15.5"/></svg>
+        <span>Cash</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="stkContent"><div class="stk-loading"><b>Loading stock data...</b>Connecting to Supabase...</div></div>
+  <div class="stk-toast" id="stkToast"></div>
+  <div class="stk-note" id="stkNote">Connecting to database...</div>
+</div>
+  </div>
+</div>
+
+<div class="stk-modal-overlay" id="stkModalOverlay">
+  <div class="stk-modal" id="stkModal"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nmgnliaglzozbfdejvtu.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZ25saWFnbHpvemJmZGVqdnR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MzkzMDQsImV4cCI6MjEwMDIxNTMwNH0.QROMsk0ZUfbbW6OL_rxi5OcXAMcJMBAQdYh2G0ueQy4';
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const contentEl    = document.getElementById('stkContent');
+const toastEl      = document.getElementById('stkToast');
+const syncEl       = document.getElementById('stkSync');
+const noteEl       = document.getElementById('stkNote');
+const metaLineEl   = document.getElementById('stkMetaLine');
+const healthLabelEl= document.getElementById('stkHealthLabel');
+const healthFillEl = document.getElementById('stkHealthFill');
+
+const todayISO = () => new Date().toISOString().slice(0,10);
+const fmtDate  = iso => {
+  const [y,m,d] = iso.split('-').map(Number);
+  return new Date(y,m-1,d).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+};
+
+const MAIN_CATEGORIES = {
+  fridge:  { label:'Fridge',  color:'--fridgecol', colorDeep:'--fridgecol-deep',
+             icon:'<rect x="6" y="2" width="12" height="20" rx="2"/><line x1="6" y1="9" x2="18" y2="9"/><line x1="9" y1="5" x2="9" y2="7"/><line x1="9" y1="12" x2="9" y2="14"/>' },
+  freezer: { label:'Freezer', color:'--ice', colorDeep:'--ice-deep',
+             icon:'<line x1="12" y1="2" x2="12" y2="22"/><line x1="4.5" y1="6" x2="19.5" y2="18"/><line x1="19.5" y1="6" x2="4.5" y2="18"/>' },
+  shelf:   { label:'Shelf', color:'--dry', colorDeep:'--dry-deep',
+             icon:'<line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/>' }
+};
+// Important is a cross-cutting flag, not a physical storage location, so it's kept separate
+// from MAIN_CATEGORIES (which drives the Storage Groups dropdown) but still renders as a tile.
+const IMPORTANT_TILE = { label:'Important', color:'--important', colorDeep:'--important-deep',
+  icon:'<polygon points="12 2 14.9 8.6 22 9.3 16.7 14.1 18.2 21 12 17.3 5.8 21 7.3 14.1 2 9.3 9.1 8.6"/>' };
+
+const CATEGORIES = {
+  frozen:      { label:'Frozen Items', sub:'freezer', color:'--ice', colorDeep:'--ice-deep', main:'freezer',
+                 icon:'<line x1="12" y1="2" x2="12" y2="22"/><line x1="4.5" y1="6" x2="19.5" y2="18"/><line x1="19.5" y1="6" x2="4.5" y2="18"/>' },
+  frozenfruit: { label:'Frozen Fruit', sub:'freezer', color:'--frozenfruit', colorDeep:'--frozenfruit-deep', main:'freezer',
+                 icon:'<circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>' },
+  tiramisus:   { label:'Tiramisus', sub:'dessert', color:'--tiramisu', colorDeep:'--tiramisu-deep', main:'freezer',
+                 icon:'<rect x="6" y="6" width="12" height="14" rx="2"/><line x1="6" y1="11" x2="18" y2="11"/><line x1="6" y1="15" x2="18" y2="15"/><circle cx="9" cy="8.5" r="0.6" fill="currentColor"/><circle cx="12" cy="8" r="0.6" fill="currentColor"/><circle cx="15" cy="8.5" r="0.6" fill="currentColor"/>' },
+  fridge:      { label:'Rest of Fridge', sub:'chilled', color:'--fridgecol', colorDeep:'--fridgecol-deep', main:'fridge',
+                 icon:'<rect x="6" y="2" width="12" height="20" rx="2"/><line x1="6" y1="9" x2="18" y2="9"/><line x1="9" y1="5" x2="9" y2="7"/><line x1="9" y1="12" x2="9" y2="14"/>' },
+  freshfruit:  { label:'Fresh Fruit', sub:'produce', color:'--freshfruit', colorDeep:'--freshfruit-deep', main:'fridge',
+                 icon:'<circle cx="12" cy="14" r="7"/><line x1="12" y1="7" x2="12" y2="4"/><line x1="12" y1="4" x2="15" y2="3"/>' },
+  milk:        { label:'Milk', sub:'dairy', color:'--milk', colorDeep:'--milk-deep', main:'fridge',
+                 icon:'<rect x="6" y="8" width="12" height="14" rx="1"/><path d="M6 8l3-4h6l3 4"/><line x1="12" y1="4" x2="12" y2="8"/>' },
+  juices:      { label:'Juices', sub:'beverages', color:'--juice', colorDeep:'--juice-deep', main:'fridge',
+                 icon:'<path d="M7 4h10l-1.5 16a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1z"/><line x1="15" y1="2" x2="17" y2="6"/>' },
+  sauces:      { label:'Sauces', sub:'condiments', color:'--sauce', colorDeep:'--sauce-deep', main:'fridge',
+                 icon:'<rect x="9" y="6" width="6" height="15" rx="2"/><rect x="10.5" y="2" width="3" height="4"/><line x1="9" y1="10" x2="15" y2="10"/>' },
+  premix:      { label:'Pre Mix', sub:'batters', color:'--premix', colorDeep:'--premix-deep', main:'fridge',
+                 icon:'<line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="10" x2="6" y2="18"/><line x1="20" y1="10" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="18"/><line x1="10" y1="10" x2="10" y2="4"/><line x1="14" y1="10" x2="14" y2="4"/>' },
+  toppings:    { label:'Toppings', sub:'sprinkles & extras', color:'--toppings', colorDeep:'--toppings-deep', main:'shelf',
+                 icon:'<line x1="6" y1="6" x2="8" y2="4"/><line x1="12" y1="4" x2="12" y2="7"/><line x1="17" y1="5" x2="16" y2="8"/><line x1="5" y1="12" x2="8" y2="13"/><line x1="19" y1="11" x2="16" y2="13"/><line x1="7" y1="18" x2="9" y2="16"/><line x1="12" y1="19" x2="12" y2="16"/><line x1="17" y1="17" x2="15" y2="15"/>' },
+  cleaning:    { label:'Cleaning', sub:'supplies', color:'--clean', colorDeep:'--clean-deep', main:'shelf',
+                 icon:'<rect x="8" y="9" width="8" height="12" rx="1.5"/><rect x="10.5" y="5" width="3" height="4"/><line x1="13.5" y1="6" x2="18" y2="4"/><line x1="18" y1="4" x2="18" y2="6.2"/><line x1="19.6" y1="3" x2="21" y2="2.3"/>' },
+  packaging:   { label:'Packaging', sub:'cups, lids, bags', color:'--packaging', colorDeep:'--packaging-deep', main:'shelf',
+                 icon:'<path d="M3 8l9-4 9 4-9 4-9-4z"/><path d="M3 8v8l9 4 9-4V8"/><path d="M12 12v8"/>' },
+  dry:         { label:'Misc', sub:'pantry', color:'--dry',  colorDeep:'--dry-deep', main:'shelf',
+                 icon:'<line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/>' }
+};
+
+function iconSvg(iconMarkup, size){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="${size}" height="${size}">${iconMarkup}</svg>`;
+}
+function catIcon(key, size){
+  return iconSvg(CATEGORIES[key].icon, size);
+}
+function mainIcon(key, size){
+  const def = key==='important' ? IMPORTANT_TILE : MAIN_CATEGORIES[key];
+  return iconSvg(def.icon, size);
+}
+function renderUsageBarChart(data){
+  if(!data || !data.length) return `<div class="stk-empty">No usage logged yet.</div>`;
+  const max = Math.max(...data.map(d=>d.total), 1);
+  let peakIdx = 0;
+  data.forEach((d,i)=>{ if(d.total > data[peakIdx].total) peakIdx = i; });
+  const bars = data.map((d,i)=>{
+    const pct = Math.max(4, Math.round((d.total/max)*100));
+    const isPeak = i===peakIdx && d.total>0;
+    return `<div class="stk-usagechart-col">
+      <div class="stk-usagechart-tooltip ${isPeak?'always':''}">${d.total}</div>
+      <div class="stk-usagechart-bar-track">
+        <div class="stk-usagechart-bar ${isPeak?'peak':''}" style="--bar-h:${pct}%"></div>
+      </div>
+      <div class="stk-usagechart-label">${d.label}</div>
+    </div>`;
+  }).join('');
+  return `<div class="stk-usagechart">${bars}</div>`;
+}
+function renderUsageLineChart(data, width, height){
+  if(!data || !data.length) return '';
+  const max = Math.max(...data.map(d=>d.total), 1);
+  const stepX = width / ((data.length - 1) || 1);
+  const points = data.map((d,i)=>{
+    const x = i * stepX;
+    const y = height - (d.total / max) * (height - 20) - 10;
+    return {x, y, label:d.label, total:d.total};
+  });
+  let pathD = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+  for(let i=1;i<points.length;i++){
+    const prev = points[i-1], curr = points[i];
+    const midX = (prev.x+curr.x)/2, midY = (prev.y+curr.y)/2;
+    pathD += ` Q ${prev.x.toFixed(1)} ${prev.y.toFixed(1)} ${midX.toFixed(1)} ${midY.toFixed(1)}`;
+  }
+  pathD += ` L ${points[points.length-1].x.toFixed(1)} ${points[points.length-1].y.toFixed(1)}`;
+  const areaD = pathD + ` L ${points[points.length-1].x.toFixed(1)} ${height} L 0 ${height} Z`;
+  const dots = points.map((p,i)=>{
+    const isLast = i===points.length-1;
+    return `<g class="stk-linechart-point">
+      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="10" fill="transparent"/>
+      <circle class="stk-linechart-dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${isLast?4:2.5}" fill="#fff" opacity="${isLast?1:0.65}"/>
+      <title>${esc(p.label)}: ${p.total} used</title>
+    </g>`;
+  }).join('');
+  return `<svg class="stk-linechart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+    <path d="${areaD}" fill="rgba(255,255,255,0.14)" stroke="none"/>
+    <path d="${pathD}" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dots}
+  </svg>`;
+}
+
+function computeGroupHealthPct(groupItems){
+  if(!groupItems.length) return 100;
+  const scoreFor = { reorder:0, low:0.5, over:0.7, ok:1 };
+  const total = groupItems.reduce((s,i)=> s + scoreFor[statusFor(i)], 0);
+  return Math.round((total/groupItems.length)*100);
+}
+function radialGauge(pct, colorVar, size){
+  const tier = pct < 50 ? 'critical' : pct < 80 ? 'ok' : 'great';
+  const tierColor = tier==='critical' ? 'var(--coral)' : tier==='ok' ? 'var(--dry)' : 'var(--mint)';
+  const r = (size/2) - 3;
+  const rOuter = (size/2) - 0.5;
+  return `<svg class="stk-gauge stk-gauge-${tier}" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="color:${tierColor};">
+    <circle class="stk-gauge-orbit" cx="${size/2}" cy="${size/2}" r="${rOuter}" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="0.5 4.5" stroke-linecap="round"/>
+    <circle class="stk-gauge-ring" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="1 4" stroke-linecap="round"/>
+  </svg>`;
+}
+function subMainOf(key){
+  return (CATEGORIES[key] && CATEGORIES[key].main) || 'shelf';
+}
+function searchIconSvg(){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>`;
+}
+function micIconSvg(){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg>`;
+}
+function sunIconSvg(){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><line x1="12" y1="2" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22"/><line x1="2" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="6.6" y2="6.6"/><line x1="17.4" y1="17.4" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="6.6" y2="17.4"/><line x1="17.4" y1="6.6" x2="19.1" y2="4.9"/></svg>`;
+}
+function moonIconSvg(){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg>`;
+}
+function applyThemeToggleIcon(){
+  const btn = document.getElementById('stkThemeToggle');
+  if(!btn) return;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  btn.innerHTML = isDark ? sunIconSvg() : moonIconSvg();
+  btn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+}
+function toggleTheme(){
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if(isDark){
+    document.documentElement.removeAttribute('data-theme');
+    try{ localStorage.setItem('tt_theme','light'); }catch(e){}
+  } else {
+    document.documentElement.setAttribute('data-theme','dark');
+    try{ localStorage.setItem('tt_theme','dark'); }catch(e){}
+  }
+  applyThemeToggleIcon();
+}
+document.getElementById('stkThemeToggle').addEventListener('click', toggleTheme);
+applyThemeToggleIcon();
+document.getElementById('stkNotifyToggle').addEventListener('click', enablePushNotifications);
+
+if(window.matchMedia){
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)=>{
+    if(localStorage.getItem('tt_theme')) return; // user has manually chosen a theme — don't override it
+    if(e.matches) document.documentElement.setAttribute('data-theme','dark');
+    else document.documentElement.removeAttribute('data-theme');
+    applyThemeToggleIcon();
+  });
+}
+
+let items = [];
+let entriesToday = {};
+let activeTab = 'dashboard';
+let dashMain = null;
+let dashCategory = null;
+let dashSection = null;
+let entryMain = null;
+let entryCategory = null;
+let lastEntryMeta = null;
+let realtimeSub = null;
+let highlightItemId = null;
+let alertsExpanded = false;
+let itemSearchQuery = '';
+let itemsSubTab = 'manage';
+let addItemFormOpen = false;
+let diagnosticsOpen = false;
+let orderSectionOpen = false;
+let insightsOpen = false;
+let peanutBoardOpen = false;
+let weeklyUsage = [];
+let staffWorking = [];
+let rosterShifts = [];
+
+function toast(msg, dur=2400){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  setTimeout(()=> toastEl.classList.remove('show'), dur);
+}
+function setSync(state){
+  syncEl.className = 'stk-sync ' + state;
+  syncEl.textContent = state === 'live' ? 'Live sync on' : state === 'offline' ? 'Offline' : 'Connecting...';
+}
+function refreshMetaLine(){
+  if(!lastEntryMeta){ metaLineEl.textContent = ''; return; }
+  const dt = new Date(lastEntryMeta.created_at);
+  const when = dt.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' at ' + dt.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+  metaLineEl.innerHTML = `Last count signed off by <b>${esc(lastEntryMeta.staff_name)}</b> &middot; ${when}`;
+}
+
+// ---- DB helpers ----
+function dbItemToLocal(r){
+  return {
+    id: r.id, name: r.name, unit: r.unit,
+    category: r.category || 'dry',
+    currentStock: Number(r.current_stock),
+    par: Number(r.par),
+    lowAt: r.low_at !== null ? Number(r.low_at) : Math.round(Number(r.par)*1.4),
+    maxAt: r.max_at !== null ? Number(r.max_at) : null,
+    reorderQty: Number(r.reorder_qty),
+    supplierUrl: r.supplier_url || '',
+    supplierName: r.supplier_name || '',
+    expiryDate: r.expiry_date || '',
+    important: !!r.important
+  };
+}
+function localItemToDb(i){
+  return {
+    id: i.id, name: i.name, unit: i.unit,
+    category: i.category || 'dry',
+    current_stock: i.currentStock,
+    par: i.par,
+    low_at: Math.round(i.par * 1.4),
+    max_at: i.maxAt,
+    reorder_qty: i.reorderQty,
+    supplier_url: i.supplierUrl || null,
+    supplier_name: i.supplierName || null,
+    expiry_date: i.expiryDate || null,
+    important: !!i.important,
+    updated_at: new Date().toISOString()
+  };
+}
+
+async function loadItems(){
+  const { data, error } = await db.from('tt_items').select('*').order('name');
+  if(error){ console.error(error); setSync('offline'); return; }
+  items = (data||[]).map(dbItemToLocal);
+  setSync('live');
+}
+async function loadSubcategoryMap(){
+  const { data, error } = await db.from('tt_subcategories').select('*');
+  if(error){ console.error(error); return; }
+  (data||[]).forEach(row=>{
+    if(CATEGORIES[row.key]) CATEGORIES[row.key].main = row.main_category;
+  });
+}
+async function saveSubcategoryMain(key, mainCategory){
+  const { error } = await db.from('tt_subcategories').upsert({ key, main_category: mainCategory }, {onConflict:'key'});
+  if(error){ toast('Could not save: ' + error.message); return false; }
+  CATEGORIES[key].main = mainCategory;
+  return true;
+}
+async function saveItem(item){
+  const { error } = await db.from('tt_items').upsert(localItemToDb(item), {onConflict:'id'});
+  if(error){ toast('Save failed: ' + error.message); return false; }
+  return true;
+}
+async function deleteItem(id){
+  const { error } = await db.from('tt_items').delete().eq('id', id);
+  if(error){ toast('Delete failed: ' + error.message); return false; }
+  return true;
+}
+async function loadEntries(dateISO){
+  const { data, error } = await db.from('tt_entries').select('*').eq('entry_date', dateISO);
+  if(error){ console.error(error); return {}; }
+  const map = {};
+  (data||[]).forEach(r=>{
+    map[r.item_id] = { opening:r.opening, received:r.received, closing:r.closing, usage:r.usage, staff_name:r.staff_name };
+  });
+  return map;
+}
+async function saveEntry(itemId, dateISO, entry){
+  const { error } = await db.from('tt_entries').upsert({
+    item_id: itemId, entry_date: dateISO,
+    opening: entry.opening, received: entry.received,
+    closing: entry.closing, usage: entry.usage,
+    staff_name: entry.staff_name,
+    created_at: new Date().toISOString()
+  },{onConflict:'item_id,entry_date'});
+  if(error){ toast('Entry save failed: ' + error.message); return false; }
+  return true;
+}
+let staffPeanuts = [];
+let staffList = [];
+let selectedStaffName = localStorage.getItem('tt_last_staff_name') || '';
+let cashCounts = [];
+let announcements = [];
+let selectedAnnounceStaffName = localStorage.getItem('tt_last_staff_name') || '';
+async function loadAnnouncements(){
+  const { data, error } = await db.from('tt_announcements').select('*').order('created_at',{ascending:false}).limit(30);
+  if(error){ console.error(error); return []; }
+  return data || [];
+}
+async function postAnnouncement(message, staffName){
+  const { error } = await db.from('tt_announcements').insert({ message, staff_name: staffName||null });
+  if(error){ toast('Could not post announcement'); return false; }
+  return true;
+}
+async function deleteAnnouncement(id){
+  const { error } = await db.from('tt_announcements').delete().eq('id', id);
+  if(error){ toast('Could not remove announcement'); return false; }
+  return true;
+}
+function timeAgo(dateStr){
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.round(diffMs/60000);
+  if(mins < 1) return 'just now';
+  if(mins < 60) return mins+'m ago';
+  const hrs = Math.round(mins/60);
+  if(hrs < 24) return hrs+'h ago';
+  const days = Math.round(hrs/24);
+  if(days < 7) return days+'d ago';
+  return new Date(dateStr).toLocaleDateString(undefined,{day:'numeric',month:'short'});
+}
+function renderAnnouncementsSection(){
+  const feed = announcements.length ? announcements.map(a=>`<div class="stk-announce-row" data-id="${a.id}">
+    <div class="stk-announce-msg">${esc(a.message)}</div>
+    <div class="stk-announce-meta">${a.staff_name?esc(a.staff_name)+' &middot; ':''}${timeAgo(a.created_at)}<button class="stk-announce-delete" data-id="${a.id}" title="Remove">&#10005;</button></div>
+  </div>`).join('') : `<div class="stk-empty">No announcements yet.</div>`;
+
+  return `<div class="stk-panel">
+    <div class="stk-order-title" style="margin-bottom:var(--sp-3);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M3 11l18-5v14l-18-5v-4z"/><path d="M7 15v4a2 2 0 0 0 2 2h1"/></svg> Team Board</div>
+    <div class="stk-announce-form">
+      <textarea class="stk-input" id="stkAnnounceText" placeholder="Post something everyone should see..." rows="2"></textarea>
+      ${staffList.length ? `<div class="stk-staff-picker" id="stkAnnounceStaffPicker" style="margin-top:var(--sp-2);">
+        ${staffList.map(s=>`<button type="button" class="stk-staff-chip ${s.name===selectedAnnounceStaffName?'active':''}" data-name="${escAttr(s.name)}">${esc(s.name)}</button>`).join('')}
+      </div>` : ''}
+      <div class="stk-actions" style="margin-top:var(--sp-3);"><button class="stk-btn" id="stkPostAnnounce">Post</button></div>
+    </div>
+    <div class="stk-announce-feed">${feed}</div>
+  </div>`;
+}
+function bindAnnouncementsSection(){
+  document.querySelectorAll('#stkAnnounceStaffPicker .stk-staff-chip[data-name]').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      selectedAnnounceStaffName = chip.dataset.name;
+      document.querySelectorAll('#stkAnnounceStaffPicker .stk-staff-chip').forEach(c=> c.classList.toggle('active', c===chip));
+    });
+  });
+  const postBtn = document.getElementById('stkPostAnnounce');
+  if(postBtn) postBtn.addEventListener('click', async ()=>{
+    const textEl = document.getElementById('stkAnnounceText');
+    const message = textEl.value.trim();
+    if(!message){ toast('Write something first'); return; }
+    postBtn.disabled = true;
+    const ok = await postAnnouncement(message, selectedAnnounceStaffName);
+    postBtn.disabled = false;
+    if(ok){
+      toast('Posted');
+      announcements = await loadAnnouncements();
+      render();
+    }
+  });
+  document.querySelectorAll('.stk-announce-delete[data-id]').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      const ok = await deleteAnnouncement(btn.dataset.id);
+      if(ok){
+        announcements = await loadAnnouncements();
+        render();
+      }
+    });
+  });
+}
+async function loadCashCounts(){
+  const since = new Date(); since.setDate(since.getDate()-13);
+  const { data, error } = await db.from('tt_cash_counts').select('*')
+    .gte('count_date', since.toISOString().slice(0,10))
+    .order('created_at',{ascending:false});
+  if(error){ console.error(error); return []; }
+  return data || [];
+}
+async function saveCashCount(amount, staffName, notes){
+  const { error } = await db.from('tt_cash_counts').insert({
+    count_date: todayISO(), amount, staff_name: staffName||null, notes: notes||null
+  });
+  if(error){ toast('Could not save cash count'); return false; }
+  return true;
+}
+
+async function loadStaffList(){
+  const { data, error } = await db.from('tt_staff').select('*').eq('active',true).order('name',{ascending:true});
+  if(error){ console.error(error); return []; }
+  return data || [];
+}
+async function addStaffMember(name){
+  const { error } = await db.from('tt_staff').insert({ name });
+  if(error){ toast(error.code==='23505' ? 'That name is already on the list' : 'Could not add staff member'); return false; }
+  return true;
+}
+async function removeStaffMember(id){
+  const { error } = await db.from('tt_staff').update({ active:false }).eq('id', id);
+  if(error){ toast('Could not remove staff member'); return false; }
+  return true;
+}
+async function saveStaffPinRole(id, pin, role){
+  const updates = { role };
+  if(pin) updates.pin = pin;
+  const { error } = await db.from('tt_staff').update(updates).eq('id', id);
+  if(error){ toast('Could not save'); return false; }
+  return true;
+}
+async function loadStaffPeanuts(){
+  const [staffRes, entriesRes] = await Promise.all([
+    db.from('tt_staff').select('name').eq('active', true),
+    db.from('tt_entries').select('staff_name, entry_date').not('staff_name','is',null)
+  ]);
+  if(staffRes.error){ console.error(staffRes.error); return []; }
+  const staffNames = (staffRes.data||[]).map(s=>s.name);
+  if(!staffNames.length) return [];
+
+  // Match entries to canonical staff names case-insensitively, so old
+  // typo'd variants ("soph", "Sophie ") still count toward the right person.
+  const byLower = {};
+  staffNames.forEach(n=>{ byLower[n.trim().toLowerCase()] = n; });
+
+  const seen = new Set();
+  const counts = {};
+  staffNames.forEach(n=> counts[n] = 0);
+  if(!entriesRes.error){
+    (entriesRes.data||[]).forEach(r=>{
+      const raw = (r.staff_name||'').trim();
+      if(!raw) return;
+      const canonical = byLower[raw.toLowerCase()];
+      if(!canonical) return; // not a current staff member — skip rather than show a ghost entry
+      const key = canonical + '|' + r.entry_date;
+      if(seen.has(key)) return;
+      seen.add(key);
+      counts[canonical] = (counts[canonical]||0) + 1;
+    });
+  }
+  return staffNames.map(name=>({ name, peanuts: counts[name] })).sort((a,b)=> b.peanuts - a.peanuts);
+}
+const PEANUT_GOAL = 200;
+function renderPeanutBoard(){
+  if(!staffPeanuts.length) return '';
+  const winner = staffPeanuts.find(s=>s.peanuts >= PEANUT_GOAL);
+  const winnerBanner = winner ? `<div class="stk-peanut-winner">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 6H4a3 3 0 0 0 3 5"/><path d="M17 6h3a3 3 0 0 1-3 5"/></svg>
+    <div><b>${esc(winner.name)}</b> reached ${PEANUT_GOAL} peanuts first &mdash; time to book that day trip!</div>
+  </div>` : '';
+  const rows = staffPeanuts.map((s,i)=>{
+    const pct = Math.min(100, Math.round((s.peanuts/PEANUT_GOAL)*100));
+    const reachedGoal = s.peanuts >= PEANUT_GOAL;
+    return `<div class="stk-peanut-row" data-name="${escAttr(s.name)}">
+    <div class="stk-peanut-rank">${reachedGoal ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;color:var(--dry-deep);"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/></svg>` : i+1}</div>
+    <div class="stk-peanut-info">
+      <div class="stk-peanut-name-row">
+        <div class="stk-peanut-name">${esc(s.name)}</div>
+        <div class="stk-peanut-count">${s.peanuts}<span class="stk-peanut-goal">/${PEANUT_GOAL}</span> <span class="stk-peanut-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="9" r="5"/><circle cx="15.5" cy="15" r="5"/></svg></span></div>
+      </div>
+      <div class="stk-peanut-bar-track"><div class="stk-peanut-bar-fill ${reachedGoal?'reached':''}" style="width:${pct}%"></div></div>
+    </div>
+  </div>`;
+  }).join('');
+  return `<div class="stk-chart-card-sub" style="margin-bottom:var(--sp-3);">One peanut per day a stocktake gets signed off &mdash; first to ${PEANUT_GOAL} wins a paid day trip to Brisbane or the Gold Coast</div>${winnerBanner}${rows}`;
+}
+function bindPeanutBoard(){
+  contentEl.querySelectorAll('.stk-peanut-row[data-name]').forEach(row=>{
+    row.addEventListener('click', ()=> openStaffStatsModal(row.dataset.name));
+  });
+}
+async function openStaffStatsModal(name){
+  const entry = staffPeanuts.find(s=>s.name===name);
+  const { data, error } = await db.from('tt_entries').select('entry_date').ilike('staff_name', name).order('entry_date',{ascending:false});
+  const dates = error ? [] : Array.from(new Set((data||[]).map(r=>r.entry_date))).slice(0,10);
+  const dateRows = dates.map(d=>`<div class="stk-list-row" style="cursor:default;">
+    <div class="stk-list-row-name">${new Date(d+'T00:00:00').toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'short'})}</div>
+    <div class="stk-status ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;vertical-align:-1px;"><circle cx="8.5" cy="9" r="5"/><circle cx="15.5" cy="15" r="5"/></svg> +1</div>
+  </div>`).join('');
+  modalEl.innerHTML = `
+    <button class="stk-modal-close" id="stkModalCloseBtn">&#10005;</button>
+    <div class="stk-modal-header">
+      <div class="stk-cat-icon" style="width:48px;height:48px;background:rgba(78,110,242,0.12);color:var(--teal-deep);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg></div>
+      <div>
+        <div class="stk-modal-title">${esc(name)}</div>
+        <div class="stk-modal-cat">${entry ? entry.peanuts : 0} peanuts total</div>
+      </div>
+    </div>
+    <div class="stk-modal-section-label" style="margin-bottom:var(--sp-2);">Recent days logged</div>
+    <div class="stk-list-rows" style="max-height:40vh;">${dateRows || '<div class="stk-empty">No history yet.</div>'}</div>
+  `;
+  modalOverlayEl.classList.add('show');
+  document.getElementById('stkModalCloseBtn').addEventListener('click', closeItemModal);
+}
+
+async function loadLastEntryMeta(){
+  const { data, error } = await db.from('tt_entries').select('staff_name,created_at').order('created_at',{ascending:false}).limit(1);
+  if(!error && data && data.length){ lastEntryMeta = data[0]; refreshMetaLine(); }
+}
+const HISTORY_DAYS = 14;
+const DAYS_OF_COVER = 7;
+async function fetchItemHistory(itemId){
+  const since = new Date(); since.setDate(since.getDate() - HISTORY_DAYS);
+  const sinceISO = since.toISOString().slice(0,10);
+  const { data, error } = await db.from('tt_entries').select('entry_date,usage')
+    .eq('item_id', itemId).gte('entry_date', sinceISO).order('entry_date',{ascending:true});
+  if(error){ console.error(error); return []; }
+  return data || [];
+}
+function computeSuggestion(history){
+  if(!history.length) return null;
+  const totalUsage = history.reduce((s,e)=> s + Number(e.usage||0), 0);
+  const avgDaily = totalUsage / history.length;
+  return { avgDaily, suggestedQty: Math.ceil(avgDaily * DAYS_OF_COVER), daysLogged: history.length };
+}
+
+let dailyUsageCache = null;
+async function fetchDailyUsageTotals(days){
+  const since = new Date(); since.setDate(since.getDate() - (days - 1));
+  const sinceISO = since.toISOString().slice(0,10);
+  const { data, error } = await db.from('tt_entries').select('entry_date,usage').gte('entry_date', sinceISO);
+  const map = {};
+  if(!error && data){
+    data.forEach(r=>{ map[r.entry_date] = (map[r.entry_date]||0) + Number(r.usage||0); });
+  }
+  const result = [];
+  for(let i = days - 1; i >= 0; i--){
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const iso = d.toISOString().slice(0,10);
+    result.push({
+      date: iso,
+      total: map[iso] || 0,
+      label: d.toLocaleDateString(undefined,{weekday:'short'}).slice(0,3).toUpperCase()
+    });
+  }
+  dailyUsageCache = result;
+  return result;
+}
+
+// ---- Realtime ----
+async function loadStaffWorking(){
+  const { data, error } = await db.from('tt_staff_working').select('*').order('clocked_in_at',{ascending:true});
+  if(error){ console.error(error); return []; }
+  return data || [];
+}
+async function loadRoster(){
+  const startOfToday = new Date();
+  startOfToday.setHours(0,0,0,0);
+  const { data, error } = await db.from('tt_roster').select('*')
+    .gte('start_at', startOfToday.toISOString())
+    .order('start_at',{ascending:true});
+  if(error){ console.error(error); return []; }
+  return data || [];
+}
+function renderStaffWorking(){
+  const wrapEl = document.getElementById('stkWorkingNow');
+  const avatarsEl = document.getElementById('stkWorkingAvatars');
+  if(!wrapEl || !avatarsEl) return;
+  if(!staffWorking.length){ wrapEl.style.display = 'none'; return; }
+  wrapEl.style.display = 'flex';
+  avatarsEl.innerHTML = staffWorking.map(s=>{
+    return `<span class="stk-working-name-pill" title="Clocked in ${new Date(s.clocked_in_at).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}">${esc(s.name)}</span>`;
+  }).join('');
+}
+
+function subscribeRealtime(){
+  if(realtimeSub) db.removeChannel(realtimeSub);
+  realtimeSub = db.channel('stocktake-sync')
+    .on('postgres_changes',{event:'*',schema:'public',table:'tt_items'}, async ()=>{ await loadItems(); render(); })
+    .on('postgres_changes',{event:'*',schema:'public',table:'tt_entries'}, async ()=>{
+      entriesToday = await loadEntries(todayISO());
+      await loadLastEntryMeta();
+      render();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'tt_subcategories'}, async ()=>{
+      await loadSubcategoryMap();
+      render();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'tt_staff_working'}, async ()=>{
+      staffWorking = await loadStaffWorking();
+      renderStaffWorking();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'tt_roster'}, async ()=>{
+      rosterShifts = await loadRoster();
+      if(activeTab==='roster' || activeTab==='dashboard') render();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'tt_staff'}, async ()=>{
+      staffList = await loadStaffList();
+      render();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'tt_cash_counts'}, async ()=>{
+      cashCounts = await loadCashCounts();
+      if(activeTab==='cash') render();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'tt_announcements'}, async ()=>{
+      announcements = await loadAnnouncements();
+      if(activeTab==='dashboard') render();
+    })
+    .subscribe(status=>{
+      if(status === 'SUBSCRIBED') setSync('live');
+      else if(status === 'CLOSED' || status === 'CHANNEL_ERROR') setSync('offline');
+    });
+}
+
+// ---- Status logic ----
+function statusFor(item){
+  const s = item.currentStock;
+  if(s <= item.par) return 'reorder';
+  if(item.lowAt && s <= item.lowAt) return 'low';
+  if(item.maxAt && item.maxAt > 0 && s >= item.maxAt) return 'over';
+  return 'ok';
+}
+const statusLabel = {ok:'OK', low:'Low', reorder:'Reorder', over:'Over-stocked'};
+
+const EXPIRY_WARN_DAYS = 3;
+function daysUntilExpiry(item){
+  if(!item.expiryDate) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const exp = new Date(item.expiryDate + 'T00:00:00');
+  return Math.round((exp - today) / 86400000);
+}
+function isExpired(item){ const d = daysUntilExpiry(item); return d !== null && d < 0; }
+function isExpiringSoon(item){ const d = daysUntilExpiry(item); return d !== null && d >= 0 && d <= EXPIRY_WARN_DAYS; }
+function expiryLabel(item){
+  const d = daysUntilExpiry(item);
+  if(d === null) return '';
+  if(d < 0) return `Expired ${Math.abs(d)}d ago`;
+  if(d === 0) return 'Expires today';
+  return `Expires in ${d}d`;
+}
+
+// ---- Overall stock health ----
+function updateHealthBadge(){
+  if(!healthLabelEl || !healthFillEl) return;
+  if(!items.length){
+    healthLabelEl.textContent = 'No items yet';
+    healthLabelEl.className = 'stk-health-label';
+    healthFillEl.className = 'stk-health-fill';
+    healthFillEl.style.width = '0%';
+    return;
+  }
+  const scoreFor = { reorder:0, low:0.5, over:0.85, ok:1 };
+  const total = items.reduce((sum,i)=> sum + scoreFor[statusFor(i)], 0);
+  const avg = total / items.length;
+  const pct = Math.round(avg * 100);
+  let tier, label;
+  if(avg < 0.5){ tier='critical'; label='Needs attention'; }
+  else if(avg < 0.8){ tier='ok'; label='Stock levels are good'; }
+  else { tier='great'; label='Stock levels are excellent'; }
+  healthLabelEl.textContent = label;
+  healthLabelEl.className = 'stk-health-label ' + tier;
+  healthFillEl.className = 'stk-health-fill ' + tier;
+  healthFillEl.style.width = Math.max(pct,6) + '%';
+}
+
+function render(){
+  updateHealthBadge();
+  if(activeTab==='dashboard') renderDashboard();
+  else if(activeTab==='entry') renderEntry();
+  else if(activeTab==='roster') renderRoster();
+  else if(activeTab==='cash') renderCashCount();
+  else renderItems();
+}
+
+// ---- Item details modal ----
+const modalOverlayEl = document.getElementById('stkModalOverlay');
+const modalEl = document.getElementById('stkModal');
+
+function openItemModal(itemId){
+  const item = items.find(i=>i.id===itemId);
+  if(!item) return;
+  const st = statusFor(item);
+  const c = CATEGORIES[item.category];
+
+  const supplierBlock = item.supplierUrl
+    ? `<div class="stk-modal-supplier">
+         <div class="stk-modal-section-label">Supplier</div>
+         <div class="stk-modal-supplier-name">${esc(item.supplierName || 'Supplier')}</div>
+         <a class="stk-order-btn" href="${escAttr(item.supplierUrl)}" target="_blank" rel="noopener noreferrer">Order from ${esc(item.supplierName||'supplier')} &#8599;</a>
+       </div>`
+    : `<div class="stk-modal-supplier">
+         <div class="stk-modal-section-label">Supplier</div>
+         <div style="font-size:13px;color:var(--ink-soft);margin-bottom:var(--sp-2);">No supplier details set yet.</div>
+       </div>`;
+
+  const expiryStat = item.expiryDate
+    ? `<div class="stk-modal-stat"><div class="stk-modal-stat-label">Use-by</div><div class="stk-modal-stat-value" style="font-size:13px;${isExpired(item)?'color:var(--coral-deep);':isExpiringSoon(item)?'color:var(--dry);':''}">${esc(expiryLabel(item))}</div></div>`
+    : '';
+
+  modalEl.innerHTML = `
+    <button class="stk-modal-close" id="stkModalCloseBtn">&#10005;</button>
+    <div class="stk-modal-header">
+      <div class="stk-cat-icon stk-modal-icon ${item.category}">${catIcon(item.category, 24)}</div>
+      <div style="flex:1;">
+        <div class="stk-modal-title">${esc(item.name)}</div>
+        <div class="stk-modal-cat">${esc(c.label)} &middot; <span class="stk-status ${st}" style="margin-left:2px;">${statusLabel[st]}</span></div>
+      </div>
+      <button class="stk-star-toggle ${item.important?'active':''}" id="stkModalStarBtn" title="${item.important?'Remove from Important':'Mark as Important'}">&#9733;</button>
+    </div>
+    <div class="stk-modal-grid">
+      <div class="stk-modal-stat"><div class="stk-modal-stat-label">On hand</div><div class="stk-modal-stat-value">${item.currentStock} ${esc(item.unit)}</div></div>
+      <div class="stk-modal-stat"><div class="stk-modal-stat-label">Reorder qty</div><div class="stk-modal-stat-value">${item.reorderQty} ${esc(item.unit)}</div></div>
+      <div class="stk-modal-stat"><div class="stk-modal-stat-label">Reorder point</div><div class="stk-modal-stat-value">${item.par}</div></div>
+      <div class="stk-modal-stat"><div class="stk-modal-stat-label">Low warning</div><div class="stk-modal-stat-value">${item.lowAt ?? '\u2014'}</div></div>
+      <div class="stk-modal-stat"><div class="stk-modal-stat-label">Max level</div><div class="stk-modal-stat-value">${item.maxAt ?? '\u2014'}</div></div>
+      <div class="stk-modal-stat"><div class="stk-modal-stat-label">Unit</div><div class="stk-modal-stat-value">${esc(item.unit)}</div></div>
+      ${expiryStat}
+    </div>
+    <div class="stk-modal-supplier" id="stkModalHistory">
+      <div class="stk-modal-section-label">Usage history</div>
+      <div style="font-size:13px;color:var(--ink-soft);">Loading recent counts...</div>
+    </div>
+    ${supplierBlock}
+    <div class="stk-modal-actions">
+      <button class="stk-btn ghost" id="stkModalEditBtn">Edit item details</button>
+      <button class="stk-btn" id="stkModalCloseBtn2">Close</button>
+    </div>
+  `;
+
+  modalOverlayEl.classList.add('show');
+  document.getElementById('stkModalCloseBtn').addEventListener('click', closeItemModal);
+  document.getElementById('stkModalCloseBtn2').addEventListener('click', closeItemModal);
+  document.getElementById('stkModalStarBtn').addEventListener('click', async ()=>{
+    item.important = !item.important;
+    const ok = await saveItem(item);
+    if(ok){
+      toast(item.important ? 'Marked as important' : 'Removed from Important');
+      openItemModal(item.id);
+    }
+  });
+  document.getElementById('stkModalEditBtn').addEventListener('click', ()=>{
+    closeItemModal();
+    highlightItemId = item.id;
+    activeTab = 'items';
+    itemsSubTab = 'manage';
+    setActiveTabUI();
+    render();
+  });
+
+  fetchItemHistory(item.id).then(history=>{
+    const historyEl = document.getElementById('stkModalHistory');
+    if(!historyEl) return;
+    const s = computeSuggestion(history);
+    if(!s){
+      historyEl.innerHTML = `
+        <div class="stk-modal-section-label">Usage history</div>
+        <div style="font-size:13px;color:var(--ink-soft);">No counts logged yet for this item in the last ${HISTORY_DAYS} days.</div>`;
+      return;
+    }
+    const maxUsage = Math.max(...history.map(h=>Number(h.usage||0)), 1);
+    const bars = history.map(h=>{
+      const hgt = Math.max(4, Math.round((Number(h.usage||0)/maxUsage)*32));
+      return `<div class="stk-history-bar" style="height:${hgt}px;" title="${h.entry_date}: ${h.usage} ${esc(item.unit)}"></div>`;
+    }).join('');
+    const suggestDiff = s.suggestedQty - item.reorderQty;
+    historyEl.innerHTML = `
+      <div class="stk-modal-section-label">Usage history &mdash; last ${s.daysLogged} day${s.daysLogged!==1?'s':''} logged</div>
+      <div class="stk-history-bars">${bars}</div>
+      <div class="stk-modal-grid" style="margin-top:var(--sp-3); margin-bottom:0;">
+        <div class="stk-modal-stat"><div class="stk-modal-stat-label">Avg usage/day</div><div class="stk-modal-stat-value">${s.avgDaily.toFixed(1)} ${esc(item.unit)}</div></div>
+        <div class="stk-modal-stat"><div class="stk-modal-stat-label">Suggested order</div><div class="stk-modal-stat-value">${s.suggestedQty} ${esc(item.unit)}</div></div>
+      </div>
+      ${suggestDiff!==0 ? `<div style="font-size:11px;color:var(--ink-soft);margin-top:var(--sp-2);">Based on ${DAYS_OF_COVER} days of cover at recent usage &mdash; your set reorder qty is ${item.reorderQty}${suggestDiff>0?', which may be a bit low.':'.'}</div>` : ''}
+    `;
+  });
+}
+
+function closeItemModal(){
+  modalOverlayEl.classList.remove('show');
+}
+
+modalOverlayEl.addEventListener('click', (e)=>{
+  if(e.target === modalOverlayEl) closeItemModal();
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape') closeItemModal();
+});
+
+// ---- Tiles (shared by main-category level and subcategory level, dashboard + entry) ----
+function renderMainTiles(mode){
+  const storageTiles = Object.keys(MAIN_CATEGORIES).map(key=>{
+    const c = MAIN_CATEGORIES[key];
+    const groupItems = items.filter(i=>subMainOf(i.category)===key);
+    let badge = '';
+    if(mode==='dashboard'){
+      const need = groupItems.filter(i=>statusFor(i)==='reorder').length;
+      if(need>0) badge = `<div class="stk-cat-badge">${need}</div>`;
+    } else {
+      const done = groupItems.filter(i=> entriesToday[i.id] && entriesToday[i.id].closing!==undefined && entriesToday[i.id].closing!==null).length;
+      if(groupItems.length>0 && done===groupItems.length) badge = `<div class="stk-cat-done">&#10003; Done</div>`;
+      else if(done>0) badge = `<div class="stk-cat-badge" style="background:var(--dry);">${done}/${groupItems.length}</div>`;
+    }
+    const subCount = Object.keys(CATEGORIES).filter(k=>subMainOf(k)===key).length;
+    return `<div class="stk-cat-tile ${key}" data-cat="${key}">
+      ${badge}
+      <div class="stk-cat-icon ${key}">${mainIcon(key,24)}</div>
+      <div class="stk-cat-label">${c.label}</div>
+      <div class="stk-cat-count">${subCount} categor${subCount!==1?'ies':'y'} &middot; ${groupItems.length} item${groupItems.length!==1?'s':''}</div>
+    </div>`;
+  });
+
+  const importantItems = items.filter(i=>i.important);
+  let impBadge = '';
+  if(mode==='dashboard'){
+    const need = importantItems.filter(i=>statusFor(i)==='reorder').length;
+    if(need>0) impBadge = `<div class="stk-cat-badge">${need}</div>`;
+  } else {
+    const done = importantItems.filter(i=> entriesToday[i.id] && entriesToday[i.id].closing!==undefined && entriesToday[i.id].closing!==null).length;
+    if(importantItems.length>0 && done===importantItems.length) impBadge = `<div class="stk-cat-done">&#10003; Done</div>`;
+    else if(done>0) impBadge = `<div class="stk-cat-badge" style="background:var(--dry);">${done}/${importantItems.length}</div>`;
+  }
+  const importantTile = `<div class="stk-cat-tile important" data-cat="important">
+    ${impBadge}
+    <div class="stk-cat-icon important">${mainIcon('important',24)}</div>
+    <div class="stk-cat-label">${IMPORTANT_TILE.label}</div>
+    <div class="stk-cat-count">${importantItems.length} item${importantItems.length!==1?'s':''} flagged</div>
+  </div>`;
+
+  return `<div class="stk-cat-grid">${storageTiles.join('')}${importantTile}</div>`;
+}
+
+function renderCategoryTiles(mode, mainKey){
+  const keys = Object.keys(CATEGORIES).filter(k=>subMainOf(k)===mainKey);
+  const tiles = keys.map(key=>{
+    const c = CATEGORIES[key];
+    const catItems = items.filter(i=>i.category===key);
+    let badge = '';
+    if(mode==='dashboard'){
+      const need = catItems.filter(i=>statusFor(i)==='reorder').length;
+      if(need>0) badge = `<div class="stk-cat-badge">${need}</div>`;
+    } else {
+      const done = catItems.filter(i=> entriesToday[i.id] && entriesToday[i.id].closing!==undefined && entriesToday[i.id].closing!==null).length;
+      if(catItems.length>0 && done===catItems.length) badge = `<div class="stk-cat-done">&#10003; Done</div>`;
+      else if(done>0) badge = `<div class="stk-cat-badge" style="background:var(--dry);">${done}/${catItems.length}</div>`;
+    }
+    return `<div class="stk-cat-tile ${key}" data-cat="${key}">
+      ${badge}
+      <div class="stk-cat-icon ${key}">${catIcon(key,30)}</div>
+      <div class="stk-cat-label">${c.label}</div>
+      <div class="stk-cat-count">${catItems.length} item${catItems.length!==1?'s':''}</div>
+    </div>`;
+  }).join('');
+
+  return keys.length ? `<div class="stk-cat-grid">${tiles}</div>` : `<div class="stk-empty">No subcategories in ${MAIN_CATEGORIES[mainKey].label} yet.</div>`;
+}
+function bindTiles(onPick){
+  contentEl.querySelectorAll('.stk-cat-tile').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      const key = t.dataset.cat;
+      t.classList.add('tapped');
+      const svg = t.querySelector('.stk-cat-icon svg');
+      if(svg) svg.classList.add('play');
+      setTimeout(()=> onPick(key), 260);
+    });
+  });
+}
+
+// ---- Needs Ordering section ----
+function renderOrderSection(){
+  const reorderItems = items.filter(i=>statusFor(i)==='reorder');
+  if(!reorderItems.length) return '';
+
+  const groups = Object.keys(CATEGORIES).map(key=>{
+    const groupItems = reorderItems.filter(i=>i.category===key);
+    if(!groupItems.length) return '';
+    const c = CATEGORIES[key];
+    const rows = groupItems.map(i=>{
+      const supplierNote = i.supplierUrl
+        ? `<a class="stk-supplier-note has-link" href="${escAttr(i.supplierUrl)}" target="_blank" rel="noopener noreferrer">Supplied by ${esc(i.supplierName||'supplier')} &#8599;</a>`
+        : i.supplierName
+          ? `<span class="stk-supplier-note">Supplied by ${esc(i.supplierName)}</span>`
+          : `<span class="stk-supplier-note homemade">Homemade</span>`;
+      return `<div class="stk-order-row">
+        <div class="stk-order-row-top">
+          <div class="stk-order-row-icon ${key}">${catIcon(key,16)}</div>
+          <div class="stk-order-row-main">
+            <div class="stk-order-row-name">${esc(i.name)}</div>
+            <div class="stk-order-row-sub">${i.currentStock} ${esc(i.unit)} on hand &middot; order ${i.reorderQty} ${esc(i.unit)}</div>
+          </div>
+        </div>
+        ${supplierNote}
+      </div>`;
+    }).join('');
+    return `<div class="stk-order-group">
+      <div class="stk-order-group-title" style="color:var(${c.colorDeep});">${catIcon(key,14)} ${c.label}</div>
+      ${rows}
+    </div>`;
+  }).join('');
+
+  return `<div class="stk-order-panel">
+    <div class="stk-order-title-row">
+      <div class="stk-order-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg> Needs Ordering Today <span class="stk-roster-headcount">${reorderItems.length}</span></div>
+      <button class="stk-btn ghost stk-copy-order" id="stkCopyOrder" style="padding:6px 12px;font-size:12px;min-height:auto;">Copy list</button>
+    </div>
+    ${groups}
+  </div>`;
+}
+function buildOrderListText(){
+  const reorderItems = items.filter(i=>statusFor(i)==='reorder');
+  const dateStr = new Date().toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  let text = `Tropicool Treats \u2014 Order List (${dateStr})\n`;
+  Object.keys(CATEGORIES).forEach(key=>{
+    const groupItems = reorderItems.filter(i=>i.category===key);
+    if(!groupItems.length) return;
+    text += `\n${CATEGORIES[key].label.toUpperCase()}\n`;
+    groupItems.forEach(i=>{
+      text += `- ${i.name}: order ${i.reorderQty} ${i.unit}${i.supplierName ? ' (from '+i.supplierName+')' : ''}\n`;
+    });
+  });
+  return text;
+}
+function bindEntrySearchBar(){
+  const input = document.getElementById('stkEntrySearch');
+  if(input){
+    input.addEventListener('input', ()=>{
+      entrySearchQuery = input.value;
+      const cursorPos = input.selectionStart;
+      render();
+      const newInput = document.getElementById('stkEntrySearch');
+      if(newInput){ newInput.focus(); newInput.setSelectionRange(cursorPos, cursorPos); }
+    });
+  }
+  const clearBtn = document.getElementById('stkEntrySearchClear');
+  if(clearBtn) clearBtn.addEventListener('click', ()=>{ entrySearchQuery=''; render(); });
+}
+function bindOrderSection(){
+  contentEl.querySelectorAll('.stk-add-supplier').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      highlightItemId = btn.dataset.id;
+      activeTab = 'items';
+      itemsSubTab = 'manage';
+      setActiveTabUI();
+      render();
+    });
+  });
+  const copyBtn = document.getElementById('stkCopyOrder');
+  if(copyBtn){
+    copyBtn.addEventListener('click', async ()=>{
+      const text = buildOrderListText();
+      try{
+        await navigator.clipboard.writeText(text);
+        toast('Order list copied \u2014 paste it anywhere');
+      }catch(e){
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        try{ document.execCommand('copy'); toast('Order list copied \u2014 paste it anywhere'); }
+        catch(e2){ toast('Could not copy \u2014 try again'); }
+        document.body.removeChild(ta);
+      }
+    });
+  }
+}
+const FILTER_META = {
+  reorder:  { label:'Reorder',       colorDeep:'--coral-deep' },
+  expired:  { label:'Expired',       colorDeep:'--coral-deep' },
+  expiring: { label:'Expiring Soon', colorDeep:'--dry-deep' },
+  over:     { label:'Over-Stocked',  colorDeep:'--grape-deep' }
+};
+function getFilterList(filterKey){
+  if(filterKey==='reorder')  return items.filter(i=>statusFor(i)==='reorder');
+  if(filterKey==='expired')  return items.filter(i=>isExpired(i));
+  if(filterKey==='expiring') return items.filter(i=>isExpiringSoon(i) && !isExpired(i));
+  if(filterKey==='over')     return items.filter(i=>statusFor(i)==='over');
+  return [];
+}
+function openCategoryListModal(filterKey){
+  const list = getFilterList(filterKey);
+  const meta = FILTER_META[filterKey];
+  const rows = list.map(i=>{
+    const st = statusFor(i);
+    return `<div class="stk-list-row" data-id="${i.id}">
+      <div>
+        <div class="stk-list-row-name">${esc(i.name)}</div>
+        <div class="stk-list-row-sub">${esc(CATEGORIES[i.category].label)} &middot; ${i.currentStock} ${esc(i.unit)} on hand</div>
+      </div>
+      <div class="stk-status ${st}">${statusLabel[st]}</div>
+    </div>`;
+  }).join('');
+  modalEl.innerHTML = `
+    <button class="stk-modal-close" id="stkModalCloseBtn">&#10005;</button>
+    <div class="stk-modal-header">
+      <div>
+        <div class="stk-modal-title" style="color:var(${meta.colorDeep});">${esc(meta.label)}</div>
+        <div class="stk-modal-cat">${list.length} item${list.length!==1?'s':''}</div>
+      </div>
+    </div>
+    <div class="stk-list-rows">${rows || '<div class="stk-empty">Nothing here right now.</div>'}</div>
+  `;
+  modalOverlayEl.classList.add('show');
+  document.getElementById('stkModalCloseBtn').addEventListener('click', closeItemModal);
+  modalEl.querySelectorAll('.stk-list-row').forEach(row=>{
+    row.addEventListener('click', ()=> openItemModal(row.dataset.id));
+  });
+}
+function bindAlertsToggle(){
+  contentEl.querySelectorAll('.stk-alert-chip[data-filter]').forEach(btn=>{
+    btn.addEventListener('click', ()=> openCategoryListModal(btn.dataset.filter));
+  });
+}
+
+function renderItemCardsHtml(itemList, emptyMessage){
+  if(!itemList.length) return `<div class="stk-empty">${emptyMessage}</div>`;
+  return itemList.map(i=>{
+    const st = statusFor(i);
+    const scaleMax = Math.max(i.maxAt||0, i.par*2, i.currentStock, 1);
+    const pct    = Math.min(100,(i.currentStock/scaleMax)*100);
+    const parPct = Math.min(100,(i.par/scaleMax)*100);
+    const expBadge = isExpired(i) ? `<div class="stk-status expired" style="margin-top:4px;">${esc(expiryLabel(i))}</div>`
+                    : isExpiringSoon(i) ? `<div class="stk-status expiring" style="margin-top:4px;">${esc(expiryLabel(i))}</div>` : '';
+    const starBadge = i.important ? `<span class="stk-card-star" title="Important">&#9733;</span>` : '';
+    return `<div class="stk-card stk-card-clickable" data-id="${i.id}">
+      <div class="stk-card-top">
+        <div><div class="stk-item-name">${starBadge}${esc(i.name)}</div>
+        <div class="stk-item-unit">reorder at ${i.par}${i.lowAt?' &middot; low at '+i.lowAt:''}${i.maxAt?' &middot; max '+i.maxAt:''} ${esc(i.unit)}</div></div>
+        <div style="text-align:right;"><div class="stk-status ${st}">${statusLabel[st]}</div>${expBadge}</div>
+      </div>
+      <div class="stk-meter">
+        <div class="stk-meter-fill ${st}" style="width:${pct}%"></div>
+        <div class="stk-meter-par" style="left:${parPct}%"></div>
+      </div>
+      <div class="stk-nums"><span>on hand</span><b>${i.currentStock} ${esc(i.unit)}</b></div>
+      ${st==='reorder'?`<div class="stk-order-line">&#8594; Order ${i.reorderQty} ${esc(i.unit)}</div>`:''}
+      ${st==='over'?`<div class="stk-over-line">&#8593; ${i.currentStock-i.maxAt} ${esc(i.unit)} above max &mdash; skip next order</div>`:''}
+      <div class="stk-card-tap-hint">Tap for details</div>
+    </div>`;
+  }).join('');
+}
+
+// ---- Dashboard ----
+function sectionLabel(title){
+  return `<div class="stk-section-label">${esc(title)}</div>`;
+}
+function renderCategoryDiagnosticsPanel(){
+  const keys = Object.keys(CATEGORIES).map(key=>{
+    const catItems = items.filter(i=>i.category===key);
+    const pct = computeGroupHealthPct(catItems);
+    return { key, pct, count:catItems.length };
+  }).sort((a,b)=> a.pct - b.pct);
+
+  const rows = keys.map(({key,pct,count})=>{
+    const c = CATEGORIES[key];
+    const tier = pct < 50 ? 'critical' : pct < 80 ? 'ok' : 'great';
+    return `<div class="stk-diag-row" data-cat="${key}">
+      <div class="stk-diag-icon ${key}">${catIcon(key,15)}</div>
+      <div class="stk-diag-info">
+        <div class="stk-diag-top">
+          <span class="stk-diag-label">${esc(c.label)}</span>
+          <span class="stk-diag-pct ${tier}">${pct}%</span>
+        </div>
+        <div class="stk-diag-bar-track">
+          <div class="stk-diag-bar-fill ${tier}" style="--bar-target:${pct}%;"></div>
+        </div>
+      </div>
+      <div class="stk-diag-count">${count}</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="stk-panel stk-diag-panel">
+    <div class="stk-diag-header">
+      <div>
+        <div class="stk-diag-title">CATEGORY DIAGNOSTICS</div>
+        <div class="stk-diag-sub">${keys.length} channels &middot; live</div>
+      </div>
+    </div>
+    <div class="stk-diag-rows">${rows}</div>
+  </div>`;
+}
+function bindCategoryDiagnostics(){
+  const toggle = document.getElementById('stkDiagToggle');
+  if(toggle) toggle.addEventListener('click', ()=>{ diagnosticsOpen = !diagnosticsOpen; render(); });
+  contentEl.querySelectorAll('.stk-diag-row[data-cat]').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      const key = row.dataset.cat;
+      dashMain = subMainOf(key);
+      dashCategory = key;
+      render();
+    });
+  });
+}
+
+let selectedCashStaffName = localStorage.getItem('tt_last_staff_name') || '';
+function renderCashCount(){
+  const todayStr = todayISO();
+  const todaysCounts = cashCounts.filter(c=>c.count_date===todayStr);
+  const todaysTotal = todaysCounts.reduce((s,c)=> s + Number(c.amount), 0);
+
+  const formCard = `<div class="stk-panel">
+    <div class="stk-chart-card-title">End of Shift Cash Count</div>
+    <div class="stk-chart-card-sub">Logs against today &mdash; ${todayStr}</div>
+    <div class="stk-field" style="margin-top:var(--sp-4);">
+      <label>Amount counted ($)</label>
+      <input class="stk-input" id="stkCashAmount" type="number" min="0" step="0.05" placeholder="0.00">
+    </div>
+    <div class="stk-signoff" style="border-top:none; padding-top:var(--sp-3);">
+      <label>Counted by</label>
+      ${staffList.length ? `<div class="stk-staff-picker" id="stkCashStaffPicker">
+        ${staffList.map(s=>`<button type="button" class="stk-staff-chip ${s.name===selectedCashStaffName?'active':''}" data-name="${escAttr(s.name)}">${esc(s.name)}</button>`).join('')}
+      </div>` : `<input class="stk-input" id="stkCashStaffName" placeholder="Your name">`}
+    </div>
+    <div class="stk-field" style="margin-top:var(--sp-3);">
+      <label>Notes (optional)</label>
+      <input class="stk-input" id="stkCashNotes" placeholder="e.g. till was $5 short">
+    </div>
+    <div class="stk-actions" style="margin-top:var(--sp-4);"><button class="stk-btn" id="stkSaveCash">Save cash count</button></div>
+  </div>`;
+
+  const todaySummary = todaysCounts.length ? `<div class="stk-panel">
+    <div class="stk-chart-card-title">Today so far</div>
+    <div class="stk-chart-card-sub">${todaysCounts.length} count${todaysCounts.length!==1?'s':''} logged &middot; $${todaysTotal.toFixed(2)} total</div>
+    <div style="margin-top:var(--sp-3);">
+      ${todaysCounts.map(c=>`<div class="stk-list-row" style="cursor:default;">
+        <div><div class="stk-list-row-name">$${Number(c.amount).toFixed(2)}${c.staff_name?' &mdash; '+esc(c.staff_name):''}</div>
+        <div class="stk-list-row-sub">${new Date(c.created_at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}${c.notes?' &middot; '+esc(c.notes):''}</div></div>
+      </div>`).join('')}
+    </div>
+  </div>` : '';
+
+  const history = cashCounts.filter(c=>c.count_date!==todayStr);
+  const historyGroups = {};
+  history.forEach(c=>{ (historyGroups[c.count_date] = historyGroups[c.count_date] || []).push(c); });
+  const historyRows = Object.keys(historyGroups).sort().reverse().map(date=>{
+    const dayCounts = historyGroups[date];
+    const dayTotal = dayCounts.reduce((s,c)=> s + Number(c.amount), 0);
+    const d = new Date(date+'T00:00:00');
+    return `<div class="stk-roster-day">
+      <div class="stk-roster-day-title">
+        <span class="stk-roster-day-name">${d.toLocaleDateString(undefined,{weekday:'long'})}</span>
+        <span class="stk-roster-day-date">${d.toLocaleDateString(undefined,{day:'numeric',month:'short'})}</span>
+        <span class="stk-roster-headcount">$${dayTotal.toFixed(2)}</span>
+      </div>
+      ${dayCounts.map(c=>`<div class="stk-list-row" style="cursor:default;">
+        <div><div class="stk-list-row-name">$${Number(c.amount).toFixed(2)}${c.staff_name?' &mdash; '+esc(c.staff_name):''}</div>
+        <div class="stk-list-row-sub">${new Date(c.created_at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}${c.notes?' &middot; '+esc(c.notes):''}</div></div>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+  const canSeeCashHistory = currentStaffRole === 'manager' || currentStaffRole === null;
+  const historyCard = canSeeCashHistory ? `<div class="stk-panel">
+    <div class="stk-chart-card-title">History</div>
+    <div class="stk-chart-card-sub">Last 14 days</div>
+    <div style="margin-top:var(--sp-3);">${historyRows || '<div class="stk-empty">No past counts in this window.</div>'}</div>
+  </div>` : '';
+
+  contentEl.innerHTML = formCard + todaySummary + historyCard;
+
+  document.querySelectorAll('#stkCashStaffPicker .stk-staff-chip[data-name]').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      selectedCashStaffName = chip.dataset.name;
+      document.querySelectorAll('#stkCashStaffPicker .stk-staff-chip').forEach(c=> c.classList.toggle('active', c===chip));
+    });
+  });
+  const saveBtn = document.getElementById('stkSaveCash');
+  if(saveBtn) saveBtn.addEventListener('click', async ()=>{
+    const amountInput = document.getElementById('stkCashAmount');
+    const amount = Number(amountInput.value);
+    if(!amountInput.value || isNaN(amount) || amount < 0){ toast('Enter a valid amount first'); return; }
+    const staffNameInput = document.getElementById('stkCashStaffName');
+    const staffName = staffList.length ? selectedCashStaffName : (staffNameInput ? staffNameInput.value.trim() : '');
+    const notes = document.getElementById('stkCashNotes').value.trim();
+    saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
+    const ok = await saveCashCount(amount, staffName, notes);
+    saveBtn.disabled = false; saveBtn.textContent = 'Save cash count';
+    if(ok){
+      toast('Cash count saved');
+      cashCounts = await loadCashCounts();
+      render();
+    }
+  });
+}
+
+function renderRosterPreviewCard(){
+  const todayStr = new Date().toDateString();
+  const workingIds = new Set(staffWorking.map(s=>s.team_member_id));
+  const todayShifts = rosterShifts.filter(s=> new Date(s.start_at).toDateString()===todayStr);
+  const list = todayShifts.length ? todayShifts : rosterShifts.slice(0,4);
+  const heading = todayShifts.length ? `Today's Shifts &middot; ${todayShifts.length}` : 'Upcoming Shifts';
+  const rows = list.map(s=>{
+    const d = new Date(s.start_at);
+    const dayPrefix = d.toDateString()===todayStr ? '' : d.toLocaleDateString(undefined,{weekday:'short'})+' &middot; ';
+    const time = d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    const isLive = workingIds.has(s.team_member_id);
+    return `<div class="stk-roster-row">
+      <div class="stk-roster-row-dot ${isLive?'live':''}"></div>
+      <div class="stk-roster-row-main">
+        <div class="stk-roster-row-name">${esc(s.name)}${isLive?' <span class="stk-live-badge">LIVE</span>':''}</div>
+        <div class="stk-roster-row-time">${dayPrefix}${time}</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="stk-panel">
+    <div class="stk-order-title-row">
+      <div class="stk-chart-card-title" style="margin-bottom:0;">${heading}</div>
+      <button class="stk-btn ghost" id="stkViewRosterBtn" style="padding:6px 14px;font-size:12px;min-height:auto;">View roster</button>
+    </div>
+    <div>${rows || '<div class="stk-empty">No shifts published for today.</div>'}</div>
+  </div>`;
+}
+function bindRosterPreviewCard(){
+  const btn = document.getElementById('stkViewRosterBtn');
+  if(btn) btn.addEventListener('click', ()=>{ activeTab='roster'; setActiveTabUI(); render(); });
+}
+function renderRoster(){
+  const workingIds = new Set(staffWorking.map(s=>s.team_member_id));
+  const todayStr = new Date().toDateString();
+  const tomorrowStr = new Date(Date.now()+86400000).toDateString();
+
+  const groups = {};
+  rosterShifts.forEach(s=>{
+    const key = new Date(s.start_at).toDateString();
+    (groups[key] = groups[key] || []).push(s);
+  });
+
+  const days = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(); d.setDate(d.getDate()+i);
+    days.push({ dateObj:d, key:d.toDateString(), shifts: groups[d.toDateString()] || [] });
+  }
+
+  const dayPills = days.map(day=>{
+    const label = day.key===todayStr ? 'Today' : day.dateObj.toLocaleDateString(undefined,{weekday:'short'});
+    const anchor = `roster-day-${day.dateObj.getDate()}-${day.dateObj.getMonth()}`;
+    return `<button class="stk-roster-daypill ${day.key===todayStr?'today':''}" data-anchor="${anchor}">${label}<span>${day.shifts.length||'&middot;'}</span></button>`;
+  }).join('');
+
+  const sections = days.map(day=>{
+    const d = day.dateObj;
+    const dayLabel = day.key===todayStr ? 'Today' : day.key===tomorrowStr ? 'Tomorrow' : d.toLocaleDateString(undefined,{weekday:'long'});
+    const dateLabel = d.toLocaleDateString(undefined,{day:'numeric',month:'short'});
+    const anchorId = `roster-day-${d.getDate()}-${d.getMonth()}`;
+    const rows = day.shifts.length ? day.shifts.map(s=>{
+      const start = new Date(s.start_at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+      const end = s.end_at ? new Date(s.end_at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}) : '';
+      const isLive = workingIds.has(s.team_member_id);
+      return `<div class="stk-roster-row">
+        <div class="stk-roster-row-dot ${isLive?'live':''}"></div>
+        <div class="stk-roster-row-main">
+          <div class="stk-roster-row-name">${esc(s.name)}${isLive?' <span class="stk-live-badge">LIVE</span>':''}</div>
+          <div class="stk-roster-row-time">${start}${end?' &ndash; '+end:''}</div>
+        </div>
+      </div>`;
+    }).join('') : `<div class="stk-roster-empty">No one rostered</div>`;
+    return `<div class="stk-roster-day ${day.key===todayStr?'today':''}" id="${anchorId}">
+      <div class="stk-roster-day-title">
+        <span class="stk-roster-day-name">${dayLabel}</span>
+        <span class="stk-roster-day-date">${dateLabel}</span>
+        ${day.shifts.length ? `<span class="stk-roster-headcount">${day.shifts.length} rostered</span>` : ''}
+      </div>
+      ${rows}
+    </div>`;
+  }).join('');
+
+  const hoursByDay = days.map(day=>{
+    const totalHours = day.shifts.reduce((sum,s)=>{
+      if(!s.end_at) return sum;
+      return sum + (new Date(s.end_at) - new Date(s.start_at))/3600000;
+    },0);
+    return { label: day.key===todayStr ? 'TODAY' : day.dateObj.toLocaleDateString(undefined,{weekday:'short'}).slice(0,3).toUpperCase(), total: Math.round(totalHours*10)/10 };
+  });
+
+  const hoursByStaff = {};
+  rosterShifts.forEach(s=>{
+    if(!s.end_at) return;
+    const hrs = (new Date(s.end_at) - new Date(s.start_at))/3600000;
+    hoursByStaff[s.name] = (hoursByStaff[s.name]||0) + hrs;
+  });
+  const staffChartData = Object.keys(hoursByStaff)
+    .sort((a,b)=> hoursByStaff[b]-hoursByStaff[a])
+    .map(name=>({ label:name.split(' ')[0].slice(0,8).toUpperCase(), total: Math.round(hoursByStaff[name]*10)/10 }));
+
+  const patternCharts = `<div class="stk-bento-grid">
+    <div class="stk-bento-cell">
+      <div class="stk-panel">
+        <div class="stk-chart-card-title">Hours Scheduled</div>
+        <div class="stk-chart-card-sub">Per day, this week</div>
+        ${renderUsageBarChart(hoursByDay)}
+      </div>
+    </div>
+    <div class="stk-bento-cell">
+      <div class="stk-panel">
+        <div class="stk-chart-card-title">Workload Split</div>
+        <div class="stk-chart-card-sub">Hours per staff member</div>
+        ${staffChartData.length ? renderUsageBarChart(staffChartData) : '<div class="stk-empty">No shifts published yet.</div>'}
+      </div>
+    </div>
+  </div>`;
+
+  contentEl.innerHTML = `<div class="stk-panel">
+    <div class="stk-chart-card-title" style="margin-bottom:var(--sp-3);">Next 7 days</div>
+    <div class="stk-roster-daypills">${dayPills}</div>
+    ${sections}
+  </div>`;
+  contentEl.innerHTML = patternCharts + contentEl.innerHTML;
+
+  contentEl.querySelectorAll('.stk-roster-daypill[data-anchor]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const el = document.getElementById(btn.dataset.anchor);
+      if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+}
+
+function renderStockOverviewCard(){
+  const groups = Object.keys(MAIN_CATEGORIES).map(key=>({
+    key, label: MAIN_CATEGORIES[key].label,
+    count: items.filter(i=>subMainOf(i.category)===key).length
+  }));
+  const total = items.length;
+  const circles = groups.map((g,i)=>`<div class="stk-balance-circle ${i===1?'primary':''}" data-main="${g.key}">
+    <div class="stk-balance-circle-icon">${mainIcon(g.key,16)}</div>
+    <div class="stk-balance-circle-num" data-roll="${g.count}">${g.count}</div>
+    <div class="stk-balance-circle-label">${esc(g.label)}</div>
+  </div>`).join('');
+
+  return `<div class="stk-panel stk-balance-card">
+    <div class="stk-balance-top">
+      <div>
+        <div class="stk-balance-title">Stock Overview</div>
+        <div class="stk-balance-total"><span class="stk-balance-total-num" data-roll="${total}">${total}</span> <span>items tracked</span></div>
+      </div>
+    </div>
+    <div class="stk-balance-row">
+      <div class="stk-balance-circles">${circles}</div>
+      <div class="stk-balance-actions">
+        <button class="stk-btn ghost" id="stkOverviewEntryBtn">Daily Entry</button>
+        <button class="stk-btn" id="stkOverviewAddBtn">Add Item</button>
+      </div>
+    </div>
+  </div>`;
+}
+function openMainCategoryModal(mainKey){
+  const meta = MAIN_CATEGORIES[mainKey];
+  const groupItems = items.filter(i=>subMainOf(i.category)===mainKey);
+  const needReorder = groupItems.filter(i=>statusFor(i)==='reorder').length;
+  const subKeys = Object.keys(CATEGORIES).filter(k=>subMainOf(k)===mainKey);
+  const healthScoreFor = { reorder:0, low:0.5, over:0.85, ok:1 };
+  const total = groupItems.reduce((s,i)=> s + healthScoreFor[statusFor(i)], 0);
+  const healthPct = groupItems.length ? Math.round((total/groupItems.length)*100) : 100;
+  const subRows = subKeys.map(k=>{
+    const c = CATEGORIES[k];
+    const count = items.filter(i=>i.category===k).length;
+    return `<div class="stk-list-row" data-subkey="${k}">
+      <div><div class="stk-list-row-name">${esc(c.label)}</div><div class="stk-list-row-sub">${count} item${count!==1?'s':''}</div></div>
+      <div class="stk-status ok">View</div>
+    </div>`;
+  }).join('');
+
+  modalEl.innerHTML = `
+    <button class="stk-modal-close" id="stkModalCloseBtn">&#10005;</button>
+    <div class="stk-modal-header">
+      <div class="stk-cat-icon ${mainKey}" style="width:48px;height:48px;">${mainIcon(mainKey,22)}</div>
+      <div>
+        <div class="stk-modal-title">${esc(meta.label)}</div>
+        <div class="stk-modal-cat">${groupItems.length} items &middot; ${healthPct}% healthy</div>
+      </div>
+    </div>
+    <div class="stk-modal-grid">
+      <div class="stk-modal-stat"><div class="stk-modal-stat-label">Total items</div><div class="stk-modal-stat-value">${groupItems.length}</div></div>
+      <div class="stk-modal-stat"><div class="stk-modal-stat-label">Need reorder</div><div class="stk-modal-stat-value">${needReorder}</div></div>
+      <div class="stk-modal-stat"><div class="stk-modal-stat-label">Subcategories</div><div class="stk-modal-stat-value">${subKeys.length}</div></div>
+      <div class="stk-modal-stat"><div class="stk-modal-stat-label">Health</div><div class="stk-modal-stat-value">${healthPct}%</div></div>
+    </div>
+    <div class="stk-modal-section-label" style="margin-bottom:var(--sp-2);">Subcategories</div>
+    <div class="stk-list-rows" style="max-height:32vh;">${subRows || '<div class="stk-empty">No subcategories yet.</div>'}</div>
+    <div class="stk-modal-actions">
+      <button class="stk-btn" id="stkOverviewGoBtn">View all items</button>
+    </div>
+  `;
+  modalOverlayEl.classList.add('show');
+  document.getElementById('stkModalCloseBtn').addEventListener('click', closeItemModal);
+  document.getElementById('stkOverviewGoBtn').addEventListener('click', ()=>{
+    closeItemModal(); dashMain = mainKey; dashCategory = null; render();
+  });
+  modalEl.querySelectorAll('.stk-list-row[data-subkey]').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      closeItemModal(); dashMain = mainKey; dashCategory = row.dataset.subkey; render();
+    });
+  });
+}
+function animateNumberRoll(el, finalValue, duration){
+  if(!el) return;
+  const finalStr = String(finalValue);
+  const digitCount = finalStr.length;
+  const start = performance.now();
+  function frame(now){
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    if(progress >= 1){
+      el.textContent = finalStr;
+      return;
+    }
+    if(Math.random() < progress * progress){
+      el.textContent = finalStr;
+    } else {
+      const randomVal = Math.floor(Math.random() * Math.pow(10, digitCount));
+      el.textContent = String(randomVal);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+function bindStockOverviewCard(){
+  const entryBtn = document.getElementById('stkOverviewEntryBtn');
+  if(entryBtn) entryBtn.addEventListener('click', ()=>{ activeTab='entry'; setActiveTabUI(); render(); });
+  const addBtn = document.getElementById('stkOverviewAddBtn');
+  if(addBtn) addBtn.addEventListener('click', ()=>{
+    activeTab='items'; itemsSubTab='manage'; addItemFormOpen=true; setActiveTabUI(); render();
+  });
+  document.querySelectorAll('.stk-balance-circle[data-main]').forEach(c=>{
+    c.addEventListener('click', ()=> openMainCategoryModal(c.dataset.main));
+  });
+  document.querySelectorAll('.stk-balance-circle-num[data-roll], .stk-balance-total-num[data-roll]').forEach(el=>{
+    animateNumberRoll(el, Number(el.dataset.roll), 750);
+  });
+}
+
+function renderDashboard(){
+  if(!items.length){
+    contentEl.innerHTML=`<div class="stk-panel"><div class="stk-empty"><b>No items yet</b>Add your first item under "Items &amp; thresholds".</div></div>`;
+    return;
+  }
+  const reorderList  = items.filter(i=>statusFor(i)==='reorder');
+  const overList     = items.filter(i=>statusFor(i)==='over');
+  const expiredList  = items.filter(i=>isExpired(i));
+  const expiringList = items.filter(i=>isExpiringSoon(i) && !isExpired(i));
+  let banners = '';
+
+  const countedToday = items.filter(i=> entriesToday[i.id] && entriesToday[i.id].closing!==undefined && entriesToday[i.id].closing!==null).length;
+  const countedPct = items.length ? Math.round((countedToday/items.length)*100) : 0;
+  const progressPanel = `<div class="stk-progress-panel">
+    <div class="stk-progress-stat">
+      <div class="stk-progress-num">${countedToday}<span class="stk-progress-num-of">/${items.length}</span></div>
+      <div class="stk-progress-meta">
+        <div class="stk-progress-label">Today's count</div>
+        <div class="stk-progress-sub">${countedPct}% of items counted</div>
+      </div>
+    </div>
+    <div class="stk-progress-bar"><div class="stk-progress-fill" style="width:${countedPct}%"></div></div>
+  </div>`;
+
+  const chips = [];
+  const ICONS = {
+    reorder:  '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',
+    expired:  '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/>',
+    expiring: '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/>',
+    over:     '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>'
+  };
+  if(reorderList.length)  chips.push({key:'reorder', label:'REORDER', count:reorderList.length, cls:'alert'});
+  if(expiredList.length)  chips.push({key:'expired', label:'EXPIRED', count:expiredList.length, cls:'alert'});
+  if(expiringList.length) chips.push({key:'expiring', label:'EXPIRING', count:expiringList.length, cls:'expiring'});
+  if(overList.length)     chips.push({key:'over', label:'OVER-STOCKED', count:overList.length, cls:'over'});
+
+  let alertsBlock;
+  if(!chips.length){
+    alertsBlock = `<div class="stk-banner"><div class="stk-banner-num">&#10003;</div><div class="stk-banner-text">All stock levels are healthy &mdash; nothing needs ordering right now.</div></div>`;
+  } else {
+    alertsBlock = `<div class="stk-alerts-strip">
+      ${chips.map(c=>`<button class="stk-alert-chip ${c.cls}" data-filter="${c.key}">
+        <span class="stk-alert-chip-text">
+          <span class="stk-alert-chip-count">${c.count}</span>
+          <span class="stk-alert-chip-label">${c.label}</span>
+        </span>
+        <span class="stk-alert-chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[c.key]}</svg></span>
+      </button>`).join('')}
+    </div>`;
+  }
+  banners = progressPanel + alertsBlock;
+
+  const orderSection = renderOrderSection();
+
+  if(dashMain === null){
+    const healthScoreFor = { reorder:0, low:0.5, over:0.85, ok:1 };
+    const healthTotal = items.reduce((sum,i)=> sum + healthScoreFor[statusFor(i)], 0);
+    const overallHealthPct = items.length ? Math.round((healthTotal/items.length)*100) : 100;
+    const weekTotal = weeklyUsage.reduce((s,d)=>s+d.total,0);
+
+    const weeklyUsageCard = `<div class="stk-panel">
+      <div class="stk-chart-card-title">Weekly Usage</div>
+      <div class="stk-chart-card-sub">${weekTotal} units used, last 6 days</div>
+      ${renderUsageBarChart(weeklyUsage)}
+    </div>`;
+
+    const stockHealthCard = `<div class="stk-progress-panel stk-health-chart-card">
+      <div class="stk-health-chart-top">
+        <div class="stk-health-chart-pct">${overallHealthPct}%</div>
+        <button class="stk-health-chart-refresh" id="stkHealthRefresh" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
+      </div>
+      <div class="stk-health-chart-label">Stock health</div>
+      <div class="stk-health-chart-svg">${renderUsageLineChart(weeklyUsage, 280, 84)}</div>
+    </div>`;
+
+    const twoCol = `<div class="stk-bento-grid">
+      <div class="stk-bento-cell">${weeklyUsageCard}</div>
+      <div class="stk-bento-cell">${stockHealthCard}</div>
+    </div>`;
+
+    const quickActions = `<div class="stk-quick-actions">
+      <button class="stk-btn ghost" id="stkQuickEntryBtn">Daily Entry</button>
+      <button class="stk-btn ghost" id="stkQuickCashBtn">Cash Count</button>
+      <button class="stk-btn" id="stkQuickAddBtn">Add Item</button>
+    </div>`;
+
+    function bindQuickActions(){
+      document.getElementById('stkQuickEntryBtn').addEventListener('click', ()=>{ activeTab='entry'; setActiveTabUI(); render(); });
+      document.getElementById('stkQuickCashBtn').addEventListener('click', ()=>{ activeTab='cash'; setActiveTabUI(); render(); });
+      document.getElementById('stkQuickAddBtn').addEventListener('click', ()=>{
+        activeTab='items'; itemsSubTab='manage'; addItemFormOpen=true; setActiveTabUI(); render();
+      });
+    }
+
+    // ---- Section menu (dashSection === null) ----
+    if(dashSection === null){
+      const totalAlerts = reorderList.length + overList.length + expiredList.length + expiringList.length;
+      const peanutCount = renderPeanutBoard();
+      const teamBadge = announcements.length + (staffPeanuts.length ? 1 : 0);
+      const sections = [
+        { key:'status',     label:'Stock Status',        badge: totalAlerts,
+          icon:'<circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16.3" r="0.6" fill="currentColor" stroke="none"/>' },
+        { key:'categories', label:'Browse Categories',   badge: 0,
+          icon:'<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>' },
+        { key:'insights',   label:'Insights',            badge: 0,
+          icon:'<line x1="5" y1="20" x2="5" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="15"/>' },
+        { key:'ordering',   label:'Needs Ordering',      badge: reorderList.length,
+          icon:'<rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/>' },
+        { key:'team',       label:'Announcements & Team', badge: teamBadge,
+          icon:'<path d="M3 11l18-5v14l-18-5v-4z"/><path d="M7 15v4a2 2 0 0 0 2 2h1"/>' }
+      ];
+      const tiles = sections.map(s=>`<div class="stk-section-tile" data-section="${s.key}">
+        ${s.badge>0?`<div class="stk-cat-badge">${s.badge}</div>`:''}
+        <div class="stk-section-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">${s.icon}</svg></div>
+        <div class="stk-section-tile-label">${esc(s.label)}</div>
+      </div>`).join('');
+
+      contentEl.innerHTML = quickActions + `<div class="stk-section-grid">${tiles}</div>`;
+      bindQuickActions();
+      contentEl.querySelectorAll('.stk-section-tile[data-section]').forEach(t=>{
+        t.addEventListener('click', ()=>{ dashSection = t.dataset.section; render(); });
+      });
+      return;
+    }
+
+    const backBtn = `<button class="stk-back" id="stkSectionBack">&#8592; Sections</button>`;
+
+    if(dashSection === 'status'){
+      contentEl.innerHTML = backBtn + banners;
+      document.getElementById('stkSectionBack').addEventListener('click', ()=>{ dashSection=null; render(); });
+      bindAlertsToggle();
+      return;
+    }
+
+    if(dashSection === 'categories'){
+      contentEl.innerHTML = backBtn + renderMainTiles('dashboard');
+      document.getElementById('stkSectionBack').addEventListener('click', ()=>{ dashSection=null; render(); });
+      bindTiles(key=>{ dashMain = key; render(); });
+      return;
+    }
+
+    if(dashSection === 'insights'){
+      contentEl.innerHTML = backBtn + twoCol + renderCategoryDiagnosticsPanel();
+      document.getElementById('stkSectionBack').addEventListener('click', ()=>{ dashSection=null; render(); });
+      bindCategoryDiagnostics();
+      const refreshBtn = document.getElementById('stkHealthRefresh');
+      if(refreshBtn) refreshBtn.addEventListener('click', async ()=>{
+        refreshBtn.style.opacity = '0.5';
+        weeklyUsage = await fetchDailyUsageTotals(6);
+        render();
+      });
+      return;
+    }
+
+    if(dashSection === 'ordering'){
+      contentEl.innerHTML = backBtn + (orderSection || `<div class="stk-panel"><div class="stk-empty"><b>Nothing needs ordering</b>Every item is above its reorder point right now.</div></div>`);
+      document.getElementById('stkSectionBack').addEventListener('click', ()=>{ dashSection=null; render(); });
+      bindOrderSection();
+      return;
+    }
+
+    if(dashSection === 'team'){
+      const peanutRows = renderPeanutBoard();
+      const peanutBlock = peanutRows ? `<div class="stk-panel" style="margin-top:var(--sp-4);">
+        <div class="stk-order-title" style="margin-bottom:var(--sp-3);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><circle cx="8.5" cy="9" r="5"/><circle cx="15.5" cy="15" r="5"/></svg> Peanut Board</div>
+        ${peanutRows}
+      </div>` : '';
+      contentEl.innerHTML = backBtn + renderAnnouncementsSection() + peanutBlock;
+      document.getElementById('stkSectionBack').addEventListener('click', ()=>{ dashSection=null; render(); });
+      bindAnnouncementsSection();
+      if(peanutRows) bindPeanutBoard();
+      return;
+    }
+    return;
+  }
+
+  if(dashMain === 'important'){
+    const legend=`<div class="stk-legend">
+      <span><span class="stk-dot" style="background:var(--coral)"></span>Reorder</span>
+      <span><span class="stk-dot" style="background:var(--dry)"></span>Low</span>
+      <span><span class="stk-dot" style="background:var(--teal)"></span>OK</span>
+      <span><span class="stk-dot" style="background:var(--grape)"></span>Over-stocked</span>
+    </div>`;
+    const impItems = items.filter(i=>i.important);
+    const cards = renderItemCardsHtml(impItems, `No items flagged as important yet &mdash; star an item from its details popup.`);
+    contentEl.innerHTML = banners + `<button class="stk-back" id="stkBackMain">&#8592; Fridge / Freezer / Shelf</button>` + legend + `<div class="stk-grid">${cards}</div>`;
+    document.getElementById('stkBackMain').addEventListener('click', ()=>{ dashMain=null; render(); });
+    bindAlertsToggle();
+    contentEl.querySelectorAll('.stk-card-clickable').forEach(card=>{
+      card.addEventListener('click', ()=> openItemModal(card.dataset.id));
+    });
+    return;
+  }
+
+  if(dashCategory === null){
+    contentEl.innerHTML = banners + `<button class="stk-back" id="stkBackMain">&#8592; Fridge / Freezer / Shelf</button>` + renderCategoryTiles('dashboard', dashMain) + orderSection;
+    document.getElementById('stkBackMain').addEventListener('click', ()=>{ dashMain=null; render(); });
+    bindTiles(key=>{ dashCategory = key; render(); });
+    bindOrderSection();
+    bindAlertsToggle();
+    return;
+  }
+
+  const c = CATEGORIES[dashCategory];
+  const legend=`<div class="stk-legend">
+    <span><span class="stk-dot" style="background:var(--coral)"></span>Reorder</span>
+    <span><span class="stk-dot" style="background:var(--dry)"></span>Low</span>
+    <span><span class="stk-dot" style="background:var(--teal)"></span>OK</span>
+
+    <span><span class="stk-dot" style="background:var(--grape)"></span>Over-stocked</span>
+  </div>`;
+  const catItems = items.filter(i=>i.category===dashCategory);
+  const cards = renderItemCardsHtml(catItems, `No items in ${c.label} yet.`);
+
+  contentEl.innerHTML = banners + `<button class="stk-back" id="stkBack">&#8592; ${esc(MAIN_CATEGORIES[dashMain].label)} categories</button>` + legend + `<div class="stk-grid">${cards}</div>`;
+  document.getElementById('stkBack').addEventListener('click', ()=>{ dashCategory=null; render(); });
+  bindAlertsToggle();
+  contentEl.querySelectorAll('.stk-card-clickable').forEach(card=>{
+    card.addEventListener('click', ()=> openItemModal(card.dataset.id));
+  });
+}
+
+// ---- Daily Entry ----
+let entrySearchQuery = '';
+function renderEntry(){
+  if(!items.length){
+    contentEl.innerHTML=`<div class="stk-panel"><div class="stk-empty"><b>No items yet</b>Add items under "Items &amp; thresholds" first.</div></div>`;
+    return;
+  }
+  const searchBar = `<div class="stk-entry-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input class="stk-input" id="stkEntrySearch" placeholder="Search any item to count it..." value="${escAttr(entrySearchQuery)}">
+    ${entrySearchQuery ? `<button class="stk-entry-search-clear" id="stkEntrySearchClear">&#10005;</button>` : ''}
+  </div>`;
+
+  if(entrySearchQuery.trim()){
+    const q = entrySearchQuery.trim().toLowerCase();
+    const matches = items.filter(i=> i.name.toLowerCase().includes(q));
+    renderEntryForm(matches, `"${entrySearchQuery.trim()}"`, 'Fridge / Freezer / Shelf', ()=>{ entrySearchQuery=''; render(); }, searchBar);
+    bindEntrySearchBar();
+    return;
+  }
+
+  if(entryMain === null){
+    contentEl.innerHTML = searchBar + renderMainTiles('entry');
+    bindEntrySearchBar();
+    bindTiles(key=>{ entryMain = key; render(); });
+    return;
+  }
+  if(entryMain === 'important'){
+    const impItems = items.filter(i=>i.important);
+    renderEntryForm(impItems, 'Important', 'Fridge / Freezer / Shelf', ()=>{ entryMain=null; render(); }, searchBar);
+    bindEntrySearchBar();
+    return;
+  }
+  if(entryCategory === null){
+    contentEl.innerHTML = searchBar + `<button class="stk-back" id="stkBackMain">&#8592; Fridge / Freezer / Shelf</button>` + renderCategoryTiles('entry', entryMain);
+    bindEntrySearchBar();
+    document.getElementById('stkBackMain').addEventListener('click', ()=>{ entryMain=null; render(); });
+    bindTiles(key=>{ entryCategory = key; render(); });
+    return;
+  }
+
+  const c = CATEGORIES[entryCategory];
+  const catItems = items.filter(i=>i.category===entryCategory);
+  renderEntryForm(catItems, c.label, `${MAIN_CATEGORIES[entryMain].label} categories`, ()=>{ entryCategory=null; render(); }, searchBar);
+  bindEntrySearchBar();
+}
+
+function renderEntryForm(itemList, sectionTitle, backLabel, onBack, prefixHtml=''){
+  const rows = itemList.map(i=>{
+    const e = entriesToday[i.id]||{};
+    const opening  = i.currentStock;
+    const closing  = e.closing  ?? '';
+    const usage    = closing!=='' && closing!==undefined ? Math.max(0, opening - Number(closing)) : null;
+    const starBadge = i.important ? `<span class="stk-card-star" title="Important">&#9733;</span>` : '';
+    return `<div class="stk-entry-row" data-id="${i.id}">
+      <div class="stk-entry-name">${starBadge}${esc(i.name)}<span>opening: ${opening} ${esc(i.unit)}</span></div>
+      <input class="stk-input stk-closing"  type="number" min="0" placeholder="quantity" value="${closing}">
+      <div class="stk-usage">${usage===null?'&mdash;':usage+' used'}</div>
+    </div>`;
+  }).join('');
+
+  const lastName = localStorage.getItem('tt_last_staff_name') || '';
+  const voiceSupported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  contentEl.innerHTML = prefixHtml + (itemList.length ? `<button class="stk-back" id="stkBack">&#8592; ${backLabel}</button>
+  <div class="stk-panel">
+    <div style="font-weight:500;margin-bottom:4px;">${esc(sectionTitle)} &mdash; ${itemList.length} item${itemList.length!==1?'s':''}</div>
+    <div class="stk-voice">
+      ${voiceSupported
+        ? `<button class="stk-mic-btn" id="stkMicBtn">${micIconSvg()} Speak your count</button>
+           <div class="stk-voice-transcript" id="stkVoiceTranscript"></div>`
+        : `<div class="stk-voice-unsupported">${micIconSvg()} Voice input isn't supported in this browser &mdash; try Chrome, Edge, or Android.</div>`}
+    </div>
+    <div class="stk-entry-row head three-col"><div>Item</div><div>Quantity Available</div><div>Usage today</div></div>
+    ${rows}
+    <div class="stk-signoff">
+      <label>Signed off by</label>
+      ${staffList.length ? `<div class="stk-staff-picker" id="stkStaffPicker">
+        ${staffList.map(s=>`<button type="button" class="stk-staff-chip ${s.name===selectedStaffName?'active':''}" data-name="${escAttr(s.name)}">${esc(s.name)}</button>`).join('')}
+      </div>` : `<input class="stk-input" id="stkStaffName" placeholder="Your name" value="${escAttr(lastName)}"><div class="hint">Add your team under Items &amp; thresholds &rarr; Staff to switch to a tap-to-pick list.</div>`}
+    </div>
+    <div class="stk-actions"><button class="stk-btn" id="stkSaveEntry">Save ${esc(sectionTitle.toLowerCase())} count</button></div>
+  </div>`
+  : `<button class="stk-back" id="stkBack">&#8592; ${backLabel}</button>
+  <div class="stk-panel"><div class="stk-empty">No items here yet.</div></div>`);
+
+  contentEl.querySelectorAll('.stk-entry-row[data-id]').forEach(row=>{
+    const id       = row.dataset.id;
+    const clsInput = row.querySelector('.stk-closing');
+    const usageEl  = row.querySelector('.stk-usage');
+    const item     = items.find(x=>x.id===id);
+    function recalc(){
+      const c2 = clsInput.value;
+      usageEl.innerHTML = c2!=='' ? (Math.max(0,item.currentStock-Number(c2)))+' used' : '&mdash;';
+    }
+    clsInput.addEventListener('input',recalc);
+  });
+
+  document.getElementById('stkBack').addEventListener('click', onBack);
+  const saveBtn = document.getElementById('stkSaveEntry');
+  if(saveBtn) saveBtn.addEventListener('click', onSaveEntry);
+  if(voiceSupported && itemList.length) initVoiceCount(itemList);
+  contentEl.querySelectorAll('.stk-staff-chip[data-name]').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      selectedStaffName = chip.dataset.name;
+      contentEl.querySelectorAll('.stk-staff-chip').forEach(c=> c.classList.toggle('active', c===chip));
+    });
+  });
+}
+
+async function onSaveEntry(){
+  const nameInput = document.getElementById('stkStaffName');
+  const staffName = staffList.length ? (selectedStaffName || '').trim() : (nameInput ? nameInput.value.trim() : '');
+  if(!staffName){ toast(staffList.length ? 'Tap your name to sign off on this count' : 'Enter your name to sign off on this count'); return; }
+
+  const btn = document.getElementById('stkSaveEntry');
+  btn.disabled=true; btn.textContent='Saving...';
+  const date = todayISO();
+  let touched=0, ok=true;
+
+  for(const row of contentEl.querySelectorAll('.stk-entry-row[data-id]')){
+    const id    = row.dataset.id;
+    const close = row.querySelector('.stk-closing').value;
+    if(close==='') continue;
+    touched++;
+    const item        = items.find(x=>x.id===id);
+    const closingNum  = Number(close);
+    const entry = { opening:item.currentStock, received:0, closing:closingNum, usage:Math.max(0,item.currentStock-closingNum), staff_name:staffName };
+    const saved = await saveEntry(id, date, entry);
+    if(!saved){ ok=false; continue; }
+    entriesToday[id] = entry;
+    item.currentStock = closingNum;
+    await saveItem(item);
+  }
+
+  btn.disabled=false; btn.textContent="Save count";
+  if(touched===0){ toast('Enter at least one closing count first'); return; }
+  if(ok){
+    localStorage.setItem('tt_last_staff_name', staffName);
+    lastEntryMeta = { staff_name: staffName, created_at: new Date().toISOString() };
+    refreshMetaLine();
+    toast('Saved \u2014 signed off by ' + staffName);
+    const peanutKey = 'tt_peanut_' + staffName.toLowerCase().trim() + '_' + date;
+    if(!localStorage.getItem(peanutKey)){
+      localStorage.setItem(peanutKey, '1');
+      setTimeout(()=> celebratePeanut(staffName.split(' ')[0]), 900);
+    }
+    staffPeanuts = await loadStaffPeanuts();
+    entrySearchQuery = '';
+    if(entryMain === 'important'){ entryMain = null; } else { entryCategory = null; }
+    render();
+  }
+}
+function celebratePeanut(firstName){
+  const existing = document.getElementById('stkPeanutCelebrate');
+  if(existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'stk-peanut-celebrate';
+  el.id = 'stkPeanutCelebrate';
+  el.innerHTML = `
+    <div class="stk-peanut-basket-wrap">
+      <div class="stk-peanut-flying">&#129372;</div>
+      <div class="stk-peanut-basket">&#129530;</div>
+      <div class="stk-peanut-plusone">+1</div>
+    </div>
+    <div class="stk-peanut-celebrate-name">${esc(firstName)} earned today's peanut!</div>
+  `;
+  document.body.appendChild(el);
+  setTimeout(()=> el.remove(), 2300);
+}
+
+// ---- Voice count ----
+let recognitionActive = false;
+function initVoiceCount(catItems){
+  const micBtn = document.getElementById('stkMicBtn');
+  const transcriptEl = document.getElementById('stkVoiceTranscript');
+  if(!micBtn) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new SR();
+  recognition.lang = 'en-AU';
+  recognition.interimResults = true;
+  recognition.continuous = false;
+  recognition.maxAlternatives = 1;
+
+  let finalTranscript = '';
+
+  micBtn.addEventListener('click', ()=>{
+    if(recognitionActive){ recognition.stop(); return; }
+    finalTranscript = '';
+    transcriptEl.textContent = '';
+    transcriptEl.classList.remove('show');
+    try{ recognition.start(); }
+    catch(e){ toast('Could not start microphone'); }
+  });
+
+  recognition.onstart = ()=>{
+    recognitionActive = true;
+    micBtn.classList.add('listening');
+    micBtn.innerHTML = `${micIconSvg()} Listening... tap to stop`;
+  };
+  recognition.onresult = (e)=>{
+    let interim = '';
+    for(let i=e.resultIndex; i<e.results.length; i++){
+      const chunk = e.results[i][0].transcript;
+      if(e.results[i].isFinal) finalTranscript += chunk + ' ';
+      else interim += chunk;
+    }
+    transcriptEl.textContent = (finalTranscript + interim).trim();
+    transcriptEl.classList.add('show');
+  };
+  recognition.onerror = (e)=>{
+    if(e.error === 'not-allowed' || e.error === 'permission-denied'){
+      toast('Microphone access was blocked \u2014 check your browser settings');
+    } else if(e.error !== 'no-speech' && e.error !== 'aborted'){
+      toast('Voice input error \u2014 try again');
+    }
+  };
+  recognition.onend = ()=>{
+    recognitionActive = false;
+    micBtn.classList.remove('listening');
+    micBtn.innerHTML = `${micIconSvg()} Speak your count`;
+    const spoken = finalTranscript.trim();
+    if(spoken) parseVoiceTranscript(spoken, catItems, transcriptEl);
+  };
+}
+
+const NUMBER_WORDS = {
+  zero:0, none:0, nil:0, oh:0,
+  one:1, two:2, three:3, four:4, for:4, five:5, six:6, seven:7, eight:8, ate:8, nine:9, ten:10,
+  eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15, sixteen:16, seventeen:17, eighteen:18, nineteen:19, twenty:20,
+  thirty:30, forty:40, fifty:50
+};
+function wordsToNumber(str){
+  const digitMatch = str.match(/\d+(\.\d+)?/);
+  if(digitMatch) return parseFloat(digitMatch[0]);
+  const words = str.toLowerCase().split(/\s+/);
+  for(const w of words){
+    const clean = w.replace(/[^a-z]/g,'');
+    if(clean in NUMBER_WORDS) return NUMBER_WORDS[clean];
+  }
+  return null;
+}
+function normalizeName(s){
+  return s.toLowerCase().replace(/\([^)]*\)/g,'').replace(/[^a-z0-9\s]/g,'').trim();
+}
+function matchTranscriptLocally(transcript, catItems){
+  const segments = transcript.split(/,|\.|;|\band\b/i).map(s=>s.trim()).filter(Boolean);
+  const results = [];
+  const usedIds = new Set();
+  segments.forEach(seg=>{
+    const segLower = seg.toLowerCase();
+    let best = null, bestScore = 0;
+    catItems.forEach(item=>{
+      const norm = normalizeName(item.name);
+      const nameWords = norm.split(/\s+/).filter(w=>w.length>2);
+      if(!nameWords.length) return;
+      let score = 0;
+      if(segLower.includes(norm)) score = norm.length + 10;
+      else nameWords.forEach(w=>{ if(segLower.includes(w)) score += w.length; });
+      if(score > bestScore){ bestScore = score; best = item; }
+    });
+    if(best && bestScore >= 3 && !usedIds.has(best.id)){
+      const qty = wordsToNumber(seg);
+      if(qty !== null){
+        results.push({itemId: best.id, quantity: qty});
+        usedIds.add(best.id);
+      }
+    }
+  });
+  return results;
+}
+
+function parseVoiceTranscript(transcript, catItems, transcriptEl){
+  transcriptEl.textContent = 'Matching to your items...';
+  const matches = matchTranscriptLocally(transcript, catItems);
+  applyVoiceMatches(matches, transcriptEl);
+}
+
+function applyVoiceMatches(matches, transcriptEl){
+  if(!Array.isArray(matches) || !matches.length){
+    transcriptEl.textContent = "Didn't catch any items \u2014 try again or enter manually.";
+    return;
+  }
+  let filled = 0;
+  matches.forEach(m=>{
+    const row = contentEl.querySelector(`.stk-entry-row[data-id="${m.itemId}"]`);
+    if(!row) return;
+    const closingInput = row.querySelector('.stk-closing');
+    if(!closingInput) return;
+    closingInput.value = m.quantity;
+    closingInput.dispatchEvent(new Event('input'));
+    row.classList.add('stk-row-highlight');
+    setTimeout(()=> row.classList.remove('stk-row-highlight'), 2000);
+    filled++;
+  });
+  transcriptEl.textContent = filled
+    ? `Filled ${filled} item${filled>1?'s':''} from voice \u2014 check the counts below and save when ready.`
+    : "Didn't recognize any of those items \u2014 try again or enter manually.";
+}
+
+// ---- Items & thresholds ----
+function renderItems(){
+  const sorted = [...items]
+    .sort((a,b)=> a.category===b.category ? a.name.localeCompare(b.name) : a.category.localeCompare(b.category))
+    .filter(i => i.name.toLowerCase().includes(itemSearchQuery.trim().toLowerCase()));
+  const catOptions = key => Object.keys(CATEGORIES).map(k=>`<option value="${k}" ${k===key?'selected':''}>${CATEGORIES[k].label}</option>`).join('');
+
+  const rowsHtml = sorted.map(i=>`<tr data-id="${i.id}">
+    <td><input class="stk-input mini e-name" value="${escAttr(i.name)}" style="min-width:130px;"></td>
+    <td><select class="stk-input mini e-category">${catOptions(i.category)}</select></td>
+    <td><input class="stk-input mini e-unit" value="${escAttr(i.unit)}" style="width:75px;"></td>
+    <td><input class="stk-input mini e-stock" type="number" min="0" value="${i.currentStock}" style="width:70px;"></td>
+    <td><input class="stk-input mini e-par" type="number" min="0" value="${i.par}" style="width:70px;"></td>
+    <td style="font-family:'Jost',sans-serif;font-size:13px;color:var(--ink-soft);text-align:center;">${Math.round(i.par*1.4)}</td>
+    <td><input class="stk-input mini e-max" type="number" min="0" value="${i.maxAt??''}" placeholder="none" style="width:70px;"></td>
+    <td><input class="stk-input mini e-reorder" type="number" min="0" value="${i.reorderQty}" style="width:70px;"></td>
+    <td><input class="stk-input mini e-expiry" type="date" value="${escAttr(i.expiryDate||'')}" style="width:135px;"></td>
+    <td><div class="stk-supplier-stack">
+      <input class="stk-input mini e-supplier-name" value="${escAttr(i.supplierName||'')}" placeholder="Supplier name">
+      <input class="stk-input mini e-supplier" value="${escAttr(i.supplierUrl||'')}" placeholder="Supplier URL">
+    </div></td>
+    <td style="text-align:center;"><input type="checkbox" class="e-important" ${i.important?'checked':''} style="width:18px;height:18px;accent-color:var(--important);"></td>
+    <td><button class="stk-btn danger stk-remove" style="padding:5px 10px;font-size:12px;">Remove</button></td>
+  </tr>`).join('');
+
+  const mainOptions = key => Object.keys(MAIN_CATEGORIES).map(m=>`<option value="${m}" ${m===key?'selected':''}>${MAIN_CATEGORIES[m].label}</option>`).join('');
+  const storageRows = Object.keys(CATEGORIES).map(key=>{
+    const c = CATEGORIES[key];
+    return `<tr data-key="${key}">
+      <td style="display:flex;align-items:center;gap:8px;"><span class="stk-cat-icon ${key}" style="width:26px;height:26px;margin:0;">${catIcon(key,15)}</span>${esc(c.label)}</td>
+      <td><select class="stk-input mini sg-main">${mainOptions(c.main)}</select></td>
+    </tr>`;
+  }).join('');
+
+  const canManageStaff = currentStaffRole === 'manager' || currentStaffRole === null;
+  const subtabsHtml = `<div class="stk-subtabs">
+    <button class="stk-subtab ${itemsSubTab==='manage'?'active':''}" data-subtab="manage">Manage Items</button>
+    <button class="stk-subtab ${itemsSubTab==='storage'?'active':''}" data-subtab="storage">Storage Groups</button>
+    ${canManageStaff ? `<button class="stk-subtab ${itemsSubTab==='staff'?'active':''}" data-subtab="staff">Staff</button>` : ''}
+  </div>`;
+
+  const storagePanel = `<div class="stk-panel">
+      <div style="font-weight:500;margin-bottom:4px;">Storage groups</div>
+      <div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">Choose which main storage area each subcategory lives under.</div>
+      <div class="stk-table-wrap"><table class="stk-items-table">
+        <tr><th>Subcategory</th><th>Main category</th></tr>
+        ${storageRows}
+      </table></div>
+      <div class="stk-actions"><button class="stk-btn ghost" id="stkSaveStorageGroups">Save storage groups</button></div>
+    </div>`;
+
+  const addItemPanel = `<div class="stk-panel">
+      <div class="stk-collapsible-header" id="stkToggleAddForm">
+        <div style="font-weight:500;">Add an item</div>
+        <span class="stk-collapsible-caret ${addItemFormOpen?'open':''}">&#9660;</span>
+      </div>
+      <div class="stk-collapsible-body ${addItemFormOpen?'open':''}">
+        <div class="stk-form" style="margin-top:var(--sp-4);">
+          <div class="stk-field"><label>Name</label><input class="stk-input" id="stkNewName" placeholder="e.g. Waffle Cones"></div>
+          <div class="stk-field"><label>Category</label><select class="stk-input" id="stkNewCategory">${catOptions('dry')}</select></div>
+          <div class="stk-field"><label>Unit</label><input class="stk-input" id="stkNewUnit" placeholder="tubs / kg / boxes"></div>
+          <div class="stk-field"><label>On hand now</label><input class="stk-input" type="number" min="0" id="stkNewStock" placeholder="0"></div>
+          <div class="stk-field"><label>Reorder point</label><input class="stk-input" type="number" min="0" id="stkNewPar" placeholder="0"><div class="hint">Low warning auto-set at 1.4x.</div></div>
+          <div class="stk-field"><label>Max level</label><input class="stk-input" type="number" min="0" id="stkNewMax" placeholder="optional"><div class="hint">At/above this = over-stocked</div></div>
+          <div class="stk-field"><label>Reorder qty</label><input class="stk-input" type="number" min="0" id="stkNewReorder" placeholder="0"><div class="hint">How much to order</div></div>
+          <div class="stk-field"><label>Use-by date</label><input class="stk-input" type="date" id="stkNewExpiry"><div class="hint">Optional &mdash; earliest expiring unit</div></div>
+          <div class="stk-field"><label>Supplier name</label><input class="stk-input" id="stkNewSupplierName" placeholder="e.g. Moco"><div class="hint">Shown on the order button</div></div>
+          <div class="stk-field"><label>Supplier link</label><input class="stk-input" id="stkNewSupplier" placeholder="https://..."><div class="hint">Where the button takes staff</div></div>
+          <div class="stk-field"><label>&#9733; Important</label><div style="padding-top:8px;"><input type="checkbox" id="stkNewImportant" style="width:20px;height:20px;accent-color:var(--important);"></div><div class="hint">Also shows in the Important tile</div></div>
+        </div>
+        <div class="stk-actions" style="justify-content:flex-start;">
+          <button class="stk-btn ghost" id="stkAddItem">+ Add item</button>
+        </div>
+      </div>
+    </div>`;
+
+  const itemsPanel = `<div class="stk-panel" style="margin-top:14px;">
+      <div style="font-weight:500;margin-bottom:10px;">Current items <span style="font-weight:400;font-size:12px;color:var(--ink-soft);">&mdash; edit any value then hit Save changes</span></div>
+      ${items.length ? `
+      <div class="stk-search">
+        <span class="stk-search-icon">${searchIconSvg()}</span>
+        <input class="stk-input" id="stkItemSearch" placeholder="Search items by name..." value="${escAttr(itemSearchQuery)}">
+      </div>
+      ${sorted.length ? `<div class="stk-table-wrap"><table class="stk-items-table">
+        <tr><th>Item</th><th>Category</th><th>Unit</th><th>On hand</th><th>Reorder pt</th><th>Low warn (auto)</th><th>Max</th><th>Order qty</th><th>Use-by</th><th>Supplier</th><th>&#9733;</th><th></th></tr>
+        ${rowsHtml}
+      </table></div>
+      <div class="stk-actions"><button class="stk-btn" id="stkSaveItems">Save changes</button></div>`
+      : `<div class="stk-empty">No items match "${escAttr(itemSearchQuery)}".</div>`}`
+      : `<div class="stk-empty">No items yet &mdash; add your first one above.</div>`}
+    </div>`;
+
+  const staffPanel = `<div class="stk-panel">
+      <div style="font-weight:500;margin-bottom:4px;">Staff list</div>
+      <div style="font-size:12px;color:var(--ink-soft);margin-bottom:14px;">Who shows up in the sign-off picker on Daily Entry. Set a 4-digit PIN and role to enable the login lock.</div>
+      <div class="stk-form" style="margin-bottom:var(--sp-4);">
+        <div class="stk-field" style="flex:1;"><label>Add staff member</label><input class="stk-input" id="stkNewStaffName" placeholder="Full name"></div>
+      </div>
+      <div class="stk-actions" style="justify-content:flex-start;margin-bottom:var(--sp-4);">
+        <button class="stk-btn ghost" id="stkAddStaff">+ Add to list</button>
+      </div>
+      ${staffList.length ? staffList.map(s=>`<div class="stk-order-row" data-id="${s.id}">
+        <div class="stk-order-row-top">
+          <div class="stk-order-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg></div>
+          <div class="stk-order-row-main"><div class="stk-order-row-name">${esc(s.name)}${s.pin?' &middot; PIN set':' &middot; no PIN yet'}</div></div>
+        </div>
+        <div class="stk-staff-pin-row">
+          <input class="stk-input mini stk-staff-pin-input" data-id="${s.id}" type="text" inputmode="numeric" maxlength="4" placeholder="4-digit PIN" style="width:110px;">
+          <select class="stk-input mini stk-staff-role-select" data-id="${s.id}" style="width:110px;">
+            <option value="staff" ${s.role!=='manager'?'selected':''}>Staff</option>
+            <option value="manager" ${s.role==='manager'?'selected':''}>Manager</option>
+          </select>
+          <button class="stk-btn ghost stk-save-pin" data-id="${s.id}" style="padding:6px 14px;font-size:12px;">Save</button>
+          <button class="stk-btn danger stk-remove-staff" data-id="${s.id}" style="padding:6px 14px;font-size:12px;">Remove</button>
+        </div>
+      </div>`).join('') : `<div class="stk-empty">No staff added yet.</div>`}
+    </div>`;
+
+  if(itemsSubTab==='staff' && !canManageStaff) itemsSubTab = 'manage';
+  contentEl.innerHTML = subtabsHtml + (itemsSubTab==='storage' ? storagePanel : itemsSubTab==='staff' ? staffPanel : addItemPanel + itemsPanel);
+
+  contentEl.querySelectorAll('.stk-subtab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ itemsSubTab = btn.dataset.subtab; render(); });
+  });
+
+  const addStaffBtn = document.getElementById('stkAddStaff');
+  if(addStaffBtn) addStaffBtn.addEventListener('click', async ()=>{
+    const nameInput = document.getElementById('stkNewStaffName');
+    const name = nameInput.value.trim();
+    if(!name){ toast('Enter a name first'); return; }
+    const ok = await addStaffMember(name);
+    if(ok){
+      toast('Added ' + name + ' to the staff list');
+      staffList = await loadStaffList();
+      render();
+    }
+  });
+  contentEl.querySelectorAll('.stk-remove-staff').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const ok = await removeStaffMember(btn.dataset.id);
+      if(ok){
+        toast('Removed from staff list');
+        staffList = await loadStaffList();
+        render();
+      }
+    });
+  });
+  contentEl.querySelectorAll('.stk-save-pin').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.id;
+      const pinInput = contentEl.querySelector(`.stk-staff-pin-input[data-id="${id}"]`);
+      const roleSelect = contentEl.querySelector(`.stk-staff-role-select[data-id="${id}"]`);
+      const pin = pinInput.value.trim();
+      if(pin && !/^\d{4}$/.test(pin)){ toast('PIN must be exactly 4 digits'); return; }
+      const ok = await saveStaffPinRole(id, pin, roleSelect.value);
+      if(ok){
+        toast('Saved');
+        staffList = await loadStaffList();
+        render();
+      }
+    });
+  });
+
+  const toggleBtn = document.getElementById('stkToggleAddForm');
+  if(toggleBtn) toggleBtn.addEventListener('click', ()=>{ addItemFormOpen = !addItemFormOpen; render(); });
+
+  const storageSaveBtn = document.getElementById('stkSaveStorageGroups');
+  if(storageSaveBtn) storageSaveBtn.addEventListener('click', async ()=>{
+    const rows = contentEl.querySelectorAll('tr[data-key]');
+    for(const tr of rows){
+      const key = tr.dataset.key;
+      const mainVal = tr.querySelector('.sg-main').value;
+      if(CATEGORIES[key].main !== mainVal){
+        await saveSubcategoryMain(key, mainVal);
+      }
+    }
+    toast('Storage groups saved');
+    dashMain = null; dashCategory = null; entryMain = null; entryCategory = null;
+    render();
+  });
+
+  const searchInput = document.getElementById('stkItemSearch');
+  if(searchInput){
+    searchInput.addEventListener('input', ()=>{
+      itemSearchQuery = searchInput.value;
+      const cursorPos = searchInput.selectionStart;
+      renderItems();
+      const newInput = document.getElementById('stkItemSearch');
+      if(newInput){ newInput.focus(); newInput.setSelectionRange(cursorPos, cursorPos); }
+    });
+  }
+
+  if(highlightItemId){
+    const targetRow = contentEl.querySelector(`tr[data-id="${highlightItemId}"]`);
+    if(targetRow){
+      targetRow.scrollIntoView({behavior:'smooth', block:'center'});
+      targetRow.classList.add('stk-row-highlight');
+      const nameField = targetRow.querySelector('.e-supplier-name');
+      if(nameField) setTimeout(()=> nameField.focus(), 400);
+    }
+    highlightItemId = null;
+  }
+
+function normalizeUrl(raw){
+  const v = (raw||'').trim();
+  if(!v) return '';
+  return /^https?:\/\//i.test(v) ? v : 'https://'+v;
+}
+
+  const addBtn = document.getElementById('stkAddItem');
+  if(addBtn) addBtn.addEventListener('click', async ()=>{
+    const name = document.getElementById('stkNewName').value.trim();
+    const category = document.getElementById('stkNewCategory').value;
+    const unit = document.getElementById('stkNewUnit').value.trim()||'units';
+    const stock = Number(document.getElementById('stkNewStock').value||0);
+    const par   = Number(document.getElementById('stkNewPar').value||0);
+    const maxRaw= document.getElementById('stkNewMax').value;
+    const reorderQty = Number(document.getElementById('stkNewReorder').value||0);
+    const supplierUrl = normalizeUrl(document.getElementById('stkNewSupplier').value);
+    const supplierName = document.getElementById('stkNewSupplierName').value.trim();
+    const expiryDate = document.getElementById('stkNewExpiry').value;
+    const important = document.getElementById('stkNewImportant').checked;
+    if(!name){ toast('Give the item a name first'); return; }
+    const maxAt = maxRaw===''?null:Number(maxRaw);
+    if(maxAt!==null && maxAt<=par){ toast('Max level must be above the reorder point'); return; }
+    const item = {id:'itm_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), name, category, unit, par, lowAt:Math.round(par*1.4), maxAt, reorderQty, currentStock:stock, supplierUrl, supplierName, expiryDate, important};
+    items.push(item);
+    const ok = await saveItem(item);
+    if(ok){ toast('Item added'); addItemFormOpen = false; renderItems(); }
+  });
+
+  const saveBtn = document.getElementById('stkSaveItems');
+  if(saveBtn) saveBtn.addEventListener('click', async ()=>{
+    let bad=null;
+    const toSave=[];
+    contentEl.querySelectorAll('tr[data-id]').forEach(tr=>{
+      const it = items.find(x=>x.id===tr.dataset.id);
+      if(!it) return;
+      const par   = Number(tr.querySelector('.e-par').value||0);
+      const maxRaw= tr.querySelector('.e-max').value;
+      const maxAt = maxRaw===''?null:Number(maxRaw);
+      if(maxAt!==null && maxAt<=par){ bad=esc(it.name)+': max level must be above the reorder point'; return; }
+      it.name = tr.querySelector('.e-name').value.trim()||it.name;
+      it.category = tr.querySelector('.e-category').value;
+      it.unit = tr.querySelector('.e-unit').value.trim()||it.unit;
+      it.currentStock = Number(tr.querySelector('.e-stock').value||0);
+      it.par  = par;
+      it.lowAt= Math.round(par*1.4);
+      it.maxAt= maxAt;
+      it.reorderQty = Number(tr.querySelector('.e-reorder').value||0);
+      it.supplierUrl = normalizeUrl(tr.querySelector('.e-supplier').value);
+      it.supplierName = tr.querySelector('.e-supplier-name').value.trim();
+      it.expiryDate = tr.querySelector('.e-expiry').value;
+      it.important = tr.querySelector('.e-important').checked;
+      toSave.push(it);
+    });
+    if(bad){ toast(bad); return; }
+    for(const it of toSave) await saveItem(it);
+    toast('Changes saved');
+    renderItems();
+  });
+
+  contentEl.querySelectorAll('.stk-remove').forEach(btn=>{
+    btn.addEventListener('click', async e=>{
+      const id = e.target.closest('tr').dataset.id;
+      const ok = await deleteItem(id);
+      if(ok){ items=items.filter(i=>i.id!==id); toast('Item removed'); renderItems(); }
+    });
+  });
+}
+
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function nameList(arr, max=3){
+  const names = arr.map(i=>esc(i.name));
+  if(names.length<=max) return names.join(', ');
+  return names.slice(0,max).join(', ') + ` +${names.length-max} more`;
+}
+function escAttr(s){ return esc(s); }
+
+function setActiveTabUI(){
+  document.querySelectorAll('.stk-tab').forEach(t=> t.classList.toggle('active', t.dataset.tab===activeTab));
+  document.querySelectorAll('.stk-sidebar-btn[data-tab]').forEach(t=> t.classList.toggle('active', t.dataset.tab===activeTab));
+}
+document.querySelectorAll('.stk-tab, .stk-sidebar-btn[data-tab]').forEach(t=>{
+  t.addEventListener('click',()=>{ activeTab=t.dataset.tab; setActiveTabUI(); render(); });
+});
+const sidebarThemeToggle = document.getElementById('stkSidebarThemeToggle');
+if(sidebarThemeToggle) sidebarThemeToggle.addEventListener('click', toggleTheme);
+
+const VAPID_PUBLIC_KEY = 'BHOet8Tst-jy2PgHiNc5ZaAEDyer5ABj0aiDPF9No2M1AdTY5glG1S_rjSjQG3W8eOqBc6fKxib0zWaKcTzorU0';
+function urlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for(let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+function updateNotifyButton(state){
+  const btn = document.getElementById('stkNotifyToggle');
+  if(!btn) return;
+  btn.classList.toggle('active', state === 'on');
+  btn.title = state === 'on' ? 'Notifications enabled' : state === 'unsupported' ? 'Notifications not supported on this device' : 'Enable notifications';
+}
+async function initPushNotifications(){
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)){
+    updateNotifyButton('unsupported');
+    return;
+  }
+  try{
+    const reg = await navigator.serviceWorker.register('service-worker.js');
+    const existing = await reg.pushManager.getSubscription();
+    if(existing) updateNotifyButton('on');
+  }catch(e){ console.error(e); }
+}
+async function enablePushNotifications(){
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)){
+    toast('Notifications aren\u2019t supported on this device/browser');
+    return;
+  }
+  try{
+    const permission = await Notification.requestPermission();
+    if(permission !== 'granted'){ toast('Notifications were not allowed'); return; }
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub){
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+    const subJson = sub.toJSON();
+    const { error } = await db.from('tt_push_subscriptions').upsert({
+      endpoint: subJson.endpoint,
+      p256dh: subJson.keys.p256dh,
+      auth: subJson.keys.auth,
+      staff_name: localStorage.getItem('tt_last_staff_name') || null
+    }, { onConflict: 'endpoint' });
+    if(error){ console.error(error); toast('Could not save notification settings'); return; }
+    updateNotifyButton('on');
+    toast('Notifications enabled on this device');
+  }catch(e){
+    console.error(e);
+    toast('Could not enable notifications');
+  }
+}
+
+async function init(){
+  const splashStart = Date.now();
+  await loadSubcategoryMap();
+  await loadItems();
+  entriesToday = await loadEntries(todayISO());
+  await loadLastEntryMeta();
+  noteEl.innerHTML = '&#128274; Data syncs in real time across all devices via Supabase &mdash; any staff member\'s entry updates everyone instantly.';
+  subscribeRealtime();
+  render();
+  const minDisplay = 1300;
+  const elapsed = Date.now() - splashStart;
+  setTimeout(hideSplash, Math.max(0, minDisplay - elapsed));
+  staffWorking = await loadStaffWorking();
+  renderStaffWorking();
+  rosterShifts = await loadRoster();
+  weeklyUsage = await fetchDailyUsageTotals(6);
+  staffPeanuts = await loadStaffPeanuts();
+  staffList = await loadStaffList();
+  cashCounts = await loadCashCounts();
+  announcements = await loadAnnouncements();
+  render();
+  initPushNotifications();
+}
+function hideSplash(){
+  const el = document.getElementById('stkSplash');
+  if(!el) return;
+  el.classList.add('hide');
+  setTimeout(()=> el.remove(), 600);
+}
+let currentStaffRole = null;
+let currentStaffName = null;
+let enteredPin = '';
+
+function updatePinDots(){
+  const dots = document.querySelectorAll('#stkPinDots span');
+  dots.forEach((d,i)=> d.classList.toggle('filled', i < enteredPin.length));
+}
+function showPinError(msg){
+  const el = document.getElementById('stkPinError');
+  if(el) el.textContent = msg;
+  const lock = document.getElementById('stkPinLock');
+  if(lock){ lock.classList.add('shake'); setTimeout(()=> lock.classList.remove('shake'), 400); }
+  enteredPin = '';
+  updatePinDots();
+}
+async function submitPin(){
+  const errEl = document.getElementById('stkPinError');
+  if(errEl) errEl.textContent = '';
+  try{
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/verify-staff-pin`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${SUPABASE_KEY}` },
+      body: JSON.stringify({ pin: enteredPin })
+    });
+    const data = await res.json();
+    if(!data.ok){ showPinError(data.error || 'Incorrect PIN'); return; }
+    currentStaffName = data.name;
+    currentStaffRole = data.role;
+    localStorage.setItem('tt_last_staff_name', data.name);
+    const lock = document.getElementById('stkPinLock');
+    if(lock) lock.remove();
+    init();
+  }catch(e){
+    console.error(e);
+    showPinError('Could not check PIN \u2014 check your connection');
+  }
+}
+function bindPinKeypad(){
+  document.querySelectorAll('.stk-pin-key[data-num]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(enteredPin.length >= 4) return;
+      enteredPin += btn.dataset.num;
+      updatePinDots();
+      if(enteredPin.length === 4) submitPin();
+    });
+  });
+  const backBtn = document.querySelector('.stk-pin-key[data-action="back"]');
+  if(backBtn) backBtn.addEventListener('click', ()=>{
+    enteredPin = enteredPin.slice(0,-1);
+    updatePinDots();
+  });
+}
+async function checkPinLockNeeded(){
+  try{
+    const { count, error } = await db.from('tt_staff').select('*', { count:'exact', head:true }).not('pin','is',null);
+    if(error || !count){ init(); return; } // no PINs configured yet — don't lock anyone out
+    const lockHtml = `<div class="stk-pin-lock" id="stkPinLock">
+      <div class="stk-pin-lock-logo">TT</div>
+      <div class="stk-pin-lock-title">Enter your PIN</div>
+      <div class="stk-pin-dots" id="stkPinDots"><span></span><span></span><span></span><span></span></div>
+      <div class="stk-pin-error" id="stkPinError"></div>
+      <div class="stk-pin-keypad">
+        ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="stk-pin-key" data-num="${n}">${n}</button>`).join('')}
+        <div></div><button class="stk-pin-key" data-num="0">0</button><button class="stk-pin-key" data-action="back">&#9003;</button>
+      </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', lockHtml);
+    const splash = document.getElementById('stkSplash');
+    if(splash) splash.remove();
+    bindPinKeypad();
+  }catch(e){ console.error(e); init(); }
+}
+checkPinLockNeeded();
+
+const hudEl = document.querySelector('.stk-hud');
+if(hudEl){
+  let ticking = false;
+  window.addEventListener('scroll', ()=>{
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(()=>{
+      hudEl.classList.toggle('compact', window.scrollY > 40);
+      ticking = false;
+    });
+  }, {passive:true});
+}
+
+</script>
+</body>
+</html>
