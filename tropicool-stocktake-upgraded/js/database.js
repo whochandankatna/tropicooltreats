@@ -427,9 +427,27 @@ export async function verifyStaffPin(storeId, pin) {
 }
 
 // ---- Reports / dashboard helpers -----------------------------------------------
+/**
+ * A conservative, honestly-labelled suggestion, not a demand forecast — this
+ * app has no sales-velocity/usage-rate data to compute a real reorder point
+ * from lead time and safety stock (AUDIT.md flags this as an open question),
+ * so lead time/safety-stock days are surfaced to the human as context on the
+ * order screen rather than silently folded into a formula that would imply
+ * more precision than the data supports (working rule 7: no feature that
+ * doesn't really do what it appears to do).
+ */
+function computeSuggestedQty(inv) {
+  const base = inv.targetStock ?? inv.maxStock ?? inv.reorderPoint * 2;
+  const raw = Math.max(0, Number(base) - Number(inv.currentStock));
+  const pack = Number(inv.orderPackSize) || 0;
+  if (pack > 0 && raw > 0) return Math.ceil(raw / pack) * pack;
+  return Math.round(raw * 100) / 100;
+}
+
 export async function getReorderList(storeId) {
   const inv = await getStoreInventory(storeId);
-  return inv.filter((i) => i.currentStock <= i.reorderPoint);
+  return inv.filter((i) => i.currentStock <= i.reorderPoint)
+    .map((i) => ({ ...i, suggestedQty: computeSuggestedQty(i) }));
 }
 
 export async function getExpiryAlerts(storeId, warnDays) {
@@ -452,6 +470,150 @@ export async function getLargestVariances(sessionId, limit = 5) {
     .map((l) => ({ ...l, variance: l.countedQty - l.systemQty }))
     .sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance))
     .slice(0, limit);
+}
+
+// ---- Purchase orders (Priority 7: ordering workflow) ----------------------------
+// draft -> sent -> received, or draft/sent -> cancelled (see
+// supabase/migrations/0007_purchase_orders.sql). "Sent" only records that a
+// human placed the order themselves (phone/website) — nothing here contacts
+// a supplier (working rule 6: no external actions without approval).
+// Receiving updates store_inventory.currentStock directly (matching how a
+// delivery is actually handled day to day) and logs a stock_movement for
+// the audit trail; if a use-by date is given at receive time it also opens
+// a batch the same shape Phase 6's "Receive a new batch" creates. Note this
+// means current_stock and batches remain two independently-tracked numbers
+// for perishables (a batch alone, e.g. one added directly via Items, does
+// not itself change current_stock) — an open simplification carried over
+// from Phase 6, not newly introduced here.
+export async function getOrders(storeId) {
+  return clone(
+    state.purchaseOrders.filter((o) => o.storeId === storeId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((o) => ({ ...o, lines: state.purchaseOrderLines.filter((l) => l.purchaseOrderId === o.id) })),
+  );
+}
+
+export async function createDraftOrder({ storeId, supplierName, lines, actorId }) {
+  const name = (supplierName || '').trim();
+  if (!name) throw new ValidationError('Supplier name is required.');
+  if (!lines || !lines.length) throw new ValidationError('Add at least one item to the order.');
+  const builtLines = lines.map((l) => {
+    const inv = state.storeInventory.find((si) => si.id === l.storeInventoryId);
+    if (!inv) throw new ValidationError('One of the selected items could not be found.');
+    const item = state.items.find((it) => it.id === inv.itemId);
+    const qty = Number(l.quantityOrdered);
+    if (!(qty > 0)) throw new ValidationError(`Quantity for ${item?.name || 'an item'} must be greater than zero.`);
+    return { storeInventoryId: inv.id, itemName: item?.name || '', unit: inv.unit, quantityOrdered: qty, unitCostAtOrder: inv.unitCost ?? null };
+  });
+  const order = {
+    id: uid('po'), storeId, supplierName: name, status: 'draft', notes: '',
+    createdBy: actorId, createdAt: new Date().toISOString(),
+    sentBy: null, sentAt: null, receivedBy: null, receivedAt: null,
+    cancelledBy: null, cancelledAt: null, cancelReason: null,
+  };
+  state.purchaseOrders.push(order);
+  builtLines.forEach((l) => state.purchaseOrderLines.push({ id: uid('pol'), purchaseOrderId: order.id, quantityReceived: null, ...l }));
+  recordAudit({ storeId, actorId, action: 'order_created', entityType: 'purchase_order', entityId: order.id, afterState: order });
+  notifyChange('purchase_orders');
+  return clone(order);
+}
+
+export async function updateOrderLineQty(lineId, quantityOrdered, actorId) {
+  const line = state.purchaseOrderLines.find((l) => l.id === lineId);
+  if (!line) throw new Error('Not found');
+  const order = state.purchaseOrders.find((o) => o.id === line.purchaseOrderId);
+  if (!order || order.status !== 'draft') throw new ValidationError('Only a draft order can be edited.');
+  const qty = Number(quantityOrdered);
+  if (!(qty > 0)) throw new ValidationError('Quantity must be greater than zero.');
+  line.quantityOrdered = qty;
+  recordAudit({ storeId: order.storeId, actorId, action: 'order_line_changed', entityType: 'purchase_order_line', entityId: line.id, afterState: line });
+  notifyChange('purchase_order_lines');
+  return clone(line);
+}
+
+export async function removeOrderLine(lineId, actorId) {
+  const line = state.purchaseOrderLines.find((l) => l.id === lineId);
+  if (!line) return;
+  const order = state.purchaseOrders.find((o) => o.id === line.purchaseOrderId);
+  if (!order || order.status !== 'draft') throw new ValidationError('Only a draft order can be edited.');
+  const siblingCount = state.purchaseOrderLines.filter((l) => l.purchaseOrderId === order.id).length;
+  if (siblingCount <= 1) throw new ValidationError('Cancel the order instead of removing its only item.');
+  state.purchaseOrderLines = state.purchaseOrderLines.filter((l) => l.id !== lineId);
+  recordAudit({ storeId: order.storeId, actorId, action: 'order_line_removed', entityType: 'purchase_order_line', entityId: line.id, beforeState: line });
+  notifyChange('purchase_order_lines');
+}
+
+export async function markOrderSent(orderId, actorId) {
+  const order = state.purchaseOrders.find((o) => o.id === orderId);
+  if (!order) throw new Error('Not found');
+  if (order.status !== 'draft') throw new ValidationError('Only a draft order can be marked as sent.');
+  const before = clone(order);
+  order.status = 'sent';
+  order.sentBy = actorId;
+  order.sentAt = new Date().toISOString();
+  recordAudit({ storeId: order.storeId, actorId, action: 'order_sent', entityType: 'purchase_order', entityId: order.id, beforeState: before, afterState: order });
+  notifyChange('purchase_orders');
+  return clone(order);
+}
+
+export async function cancelOrder(orderId, reason, actorId) {
+  const order = state.purchaseOrders.find((o) => o.id === orderId);
+  if (!order) throw new Error('Not found');
+  if (order.status === 'received' || order.status === 'cancelled') throw new ValidationError('This order can no longer be cancelled.');
+  const before = clone(order);
+  order.status = 'cancelled';
+  order.cancelledBy = actorId;
+  order.cancelledAt = new Date().toISOString();
+  order.cancelReason = (reason || '').trim() || null;
+  recordAudit({ storeId: order.storeId, actorId, action: 'order_cancelled', entityType: 'purchase_order', entityId: order.id, beforeState: before, afterState: order });
+  notifyChange('purchase_orders');
+  return clone(order);
+}
+
+/** lines: [{ lineId, quantityReceived, useByDate? }] */
+export async function receiveOrder({ orderId, lines, actorId }) {
+  const order = state.purchaseOrders.find((o) => o.id === orderId);
+  if (!order) throw new Error('Not found');
+  if (order.status !== 'sent') throw new ValidationError('Only a sent order can be received.');
+  if (!lines || !lines.length) throw new ValidationError('Nothing to receive.');
+  const plans = lines.map((l) => {
+    const line = state.purchaseOrderLines.find((pl) => pl.id === l.lineId && pl.purchaseOrderId === orderId);
+    if (!line) throw new ValidationError('One of the order lines could not be found.');
+    const qty = Number(l.quantityReceived);
+    if (Number.isNaN(qty) || qty < 0) throw new ValidationError(`Received quantity for ${line.itemName} must be zero or more.`);
+    const inv = state.storeInventory.find((si) => si.id === line.storeInventoryId);
+    if (!inv) throw new ValidationError(`${line.itemName} is no longer in this store's inventory.`);
+    if (l.useByDate && !/^\d{4}-\d{2}-\d{2}$/.test(l.useByDate)) throw new ValidationError('Use-by date is not valid.');
+    return { line, inv, qty, useByDate: l.useByDate || null };
+  });
+  const today = brisbaneDateISO();
+  const ref = `Order #${orderId.slice(-6)}`;
+  for (const { line, inv, qty, useByDate } of plans) {
+    line.quantityReceived = qty;
+    if (qty > 0) {
+      inv.currentStock = Math.round((Number(inv.currentStock) + qty) * 100) / 100;
+      state.stockMovements.push({
+        id: uid('mv'), storeInventoryId: inv.id, movementType: 'delivery', quantity: qty, unit: inv.unit,
+        reason: null, reference: ref, relatedStoreId: null, batchId: null,
+        sessionId: null, staffId: actorId, occurredAt: new Date().toISOString(),
+      });
+      if (useByDate) {
+        state.batches.push({
+          id: uid('batch'), storeInventoryId: inv.id, quantityReceived: qty, quantityRemaining: qty,
+          receivedDate: today, useByDate, supplierReference: ref, status: 'active',
+        });
+      }
+    }
+  }
+  const before = clone(order);
+  order.status = 'received';
+  order.receivedBy = actorId;
+  order.receivedAt = new Date().toISOString();
+  recordAudit({ storeId: order.storeId, actorId, action: 'order_received', entityType: 'purchase_order', entityId: order.id, beforeState: before, afterState: order });
+  notifyChange('purchase_orders');
+  notifyChange('store_inventory');
+  notifyChange('item_batches');
+  return clone(order);
 }
 
 // ---- Cash counts -----------------------------------------------------------------

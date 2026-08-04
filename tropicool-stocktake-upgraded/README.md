@@ -25,7 +25,7 @@ been deployed, and no production Supabase migration has been run.
       variance, over max, unexpected zero) and an in-modal recount reason
       replacing window.prompt
 - [x] Phase 6 — Inventory model split + batch expiry
-- [ ] Phase 7 — Ordering workflow
+- [x] Phase 7 — Ordering workflow
 - [ ] Phase 8 — Reports + exports
 - [ ] Phase 9 — Cash count redesign
 - [ ] Phase 10 — Design system / accessibility pass
@@ -73,7 +73,7 @@ tropicool-stocktake-upgraded/
     app.js                                   entry point, wires it all up
   supabase/
     migrations/               proposed SQL migrations (not run against production;
-                                 0001-0006 verified to apply cleanly against a
+                                 0001-0007 verified to apply cleanly against a
                                  throwaway local Postgres 16, see DATA_MODEL.md
                                  and AUTH_MODEL.md)
     functions/
@@ -263,6 +263,84 @@ helper to `ui.js`; and the waste-reason prompt clobbering the open batches
 modal's DOM since both use the same modal singleton — fixed by reopening
 the batches modal fresh after the prompt resolves instead of reusing stale
 element references.
+
+### Phase 7 — ordering workflow
+
+Turns the "needs ordering" list from earlier phases into a trackable
+draft &rarr; sent &rarr; received (or cancelled) workflow, proposed as
+`supabase/migrations/0007_purchase_orders.sql` (`purchase_orders`,
+`purchase_order_lines`, RLS-enforced, not run — see the migration testing
+note below) and implemented against the mock layer in `js/orders.js` /
+`js/database.js`.
+
+- **Needs ordering, grouped by supplier**: each item shows on-hand stock,
+  reorder point, lead time/safety-stock days (context for the human, see
+  below), and a suggested order quantity a manager can adjust before
+  selecting items to include.
+- **Suggested quantity** is deliberately conservative: `target stock (or
+  max, or 2x reorder point) - on hand`, rounded up to a full order pack if
+  one is set. This app has no sales-velocity data to compute a real,
+  demand-based reorder point from lead time and safety stock, so those are
+  shown as context for a human to judge urgency rather than folded into a
+  formula that would claim more precision than the data supports (working
+  rule 7 — no feature that doesn't really do what it looks like it does).
+- **Draft &rarr; sent &rarr; received/cancelled**: a manager selects items
+  from a supplier group to create a draft order (quantities editable,
+  lines removable), marks it sent once they've actually placed it with the
+  supplier themselves, and marks it received when it arrives. This app
+  never contacts a supplier — "sent" only records that a human did that
+  step outside the app (working rule 6: no external actions without
+  approval).
+- **Receiving updates stock for real**: entering what actually arrived
+  (which can differ from what was ordered) bumps `store_inventory.
+  currentStock` immediately and logs a stock_movement (`movement_type=
+  'delivery'`) for the audit trail. An optional use-by date at receive time
+  also opens a batch through the same path Phase 6's "Receive a new batch"
+  uses — though, as before, a batch and `currentStock` remain two
+  independently tracked numbers (see the comment above `receiveOrder` in
+  `database.js`); this is a known, flagged simplification, not new to
+  Phase 7.
+- Staff (non-managers) see the needs-ordering list and order history
+  read-only — no create/edit/send/receive/cancel controls — matching the
+  manager-only gating already used for Items.
+
+Verified with 24 new Playwright checks: the full lifecycle (create draft
+&rarr; edit quantity &rarr; mark sent &rarr; receive with a use-by date
+&rarr; confirm stock and a batch were created), removing a line from a
+draft (and being blocked from removing the last one), cancelling with an
+accessible reason prompt (confirmed no native `window.prompt`/`confirm`
+fires anywhere in the flow), and staff seeing a read-only view. All 24
+passing, plus a full re-run of the Phase 4, 5, and 6 Playwright suites (no
+regressions) and all 24 unit tests. `0007_purchase_orders.sql`'s RLS was
+verified by hand the same way Phase 3's was — applied to a scratch local
+Postgres 16 alongside `0001`-`0006` and exercised with the JWT-claims stub:
+confirmed a manager can create/view/send/receive orders at their own
+store, a non-manager staff member is denied, a manager at a different
+store is denied (both create and read), and a draft order's line can be
+deleted but a sent/received one cannot.
+
+Two real bugs were caught by this phase's Playwright run, not just the
+test script needing adjustment, and fixed in product code:
+1. **Toast blocking clicks.** `.tt-toast` sat as a fixed, centred element
+   with default pointer events, so tapping something directly underneath
+   it (e.g. opening the order you'd just created) could hit the toast
+   instead for its ~3s visible window. Fixed by making the toast itself
+   `pointer-events: none` and re-enabling it only on `.tt-toast-action`
+   (the "Undo" button), so informational toasts never block the content
+   they float over.
+2. **Item cards rounding decimal stock to a whole number.** `itemCardHtml`
+   called `fmtQty(i.currentStock)` with no decimals argument, so a kg item
+   like Frozen Blueberries showed "6 kg on hand" instead of "6.2 kg" right
+   after a delivery added a fractional amount — a real accuracy problem
+   for a stocktake app (working rule 9). Fixed in `items.js` and in this
+   phase's own `orders.js` output to pass `decimalsForUnit(unit)`
+   (`config.js`, already used correctly in `stocktake.js`'s count cards)
+   instead of defaulting to whole numbers. Note: `home.js` and
+   `reports.js` have a handful of older `fmtQty(...)` calls with the same
+   default-to-whole-number gap for non-variance fields — left alone here
+   since fixing them touches already-checkpointed Home/Reports work beyond
+   this phase's scope, but flagging it now rather than leaving it silent;
+   worth a pass in Phase 10 (design/accessibility) or a dedicated cleanup.
 
 ## Running tests
 

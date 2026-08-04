@@ -15,7 +15,7 @@
 import * as db from './database.js';
 import { getSession, isManager } from './auth.js';
 import { esc, icon, fmtQty, toast, confirmDialog, promptText, openModal, closeModal } from './ui.js';
-import { CATEGORIES } from './config.js';
+import { CATEGORIES, decimalsForUnit } from './config.js';
 import { brisbaneDateISO, daysBetween, formatBrisbaneDate } from './date.js';
 
 let query = '';
@@ -69,7 +69,7 @@ function itemCardHtml(i, batches) {
   return `<div class="tt-item-card">
     <div class="tt-item-card-main">
       <div class="tt-item-card-name">${i.important ? '<span class="tt-star">&#9733;</span> ' : ''}${esc(i.item.name)}${i.item.criticalItem ? ' <span class="tt-critical-badge">CRITICAL</span>' : ''}</div>
-      <div class="tt-item-card-sub">${esc(CATEGORIES[i.item.categoryKey]?.label || i.item.categoryKey)} · ${fmtQty(i.currentStock)} ${esc(i.unit)} on hand${low ? ' · needs order' : ''}${i.supplierName ? ' · ' + esc(i.supplierName) : ''}</div>
+      <div class="tt-item-card-sub">${esc(CATEGORIES[i.item.categoryKey]?.label || i.item.categoryKey)} · ${fmtQty(i.currentStock, decimalsForUnit(i.unit))} ${esc(i.unit)} on hand${low ? ' · needs order' : ''}${i.supplierName ? ' · ' + esc(i.supplierName) : ''}</div>
       ${expiryBadge(batches)}
     </div>
     ${isManager() ? `<div class="tt-item-card-actions">
