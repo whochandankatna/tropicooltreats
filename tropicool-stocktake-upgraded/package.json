@@ -1,0 +1,9 @@
+{
+  "name": "tropicool-stocktake-upgraded",
+  "private": true,
+  "type": "module",
+  "description": "Upgraded Tropicool Treats stocktake app. See README.md and AUDIT.md.",
+  "scripts": {
+    "test": "node --test tests/date.test.js && node --experimental-strip-types --test tests/hash_and_jwt.test.mjs"
+  }
+}

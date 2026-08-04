@@ -1,12 +1,14 @@
 /**
  * Tests for js/date.js -- the Australia/Brisbane business-date utilities.
  * Run with: node --test tests/date.test.js
- * (Node's built-in test runner; no dependency install required.)
+ * (Node's built-in test runner; no dependency install required. js/date.js
+ * is a plain ES module -- the same file the browser loads via
+ * <script type="module"> -- so this project's package.json sets
+ * "type": "module" for Node to treat .js files the same way.)
  */
-'use strict';
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const TTDate = require('../js/date.js');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as TTDate from '../js/date.js';
 
 // Brisbane (Australia/Brisbane) is a fixed UTC+10 offset year-round -- it does
 // not observe daylight saving -- so every "instant at HH:MM Brisbane time" in

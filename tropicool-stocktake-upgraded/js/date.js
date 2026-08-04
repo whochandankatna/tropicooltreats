@@ -14,15 +14,6 @@
  * member's phone is set to a different timezone or a browser polyfill fakes
  * `Date`.
  */
-(function (root, factory) {
-  if (typeof module === 'object' && module.exports) {
-    module.exports = factory();
-  } else {
-    root.TTDate = factory();
-  }
-})(typeof self !== 'undefined' ? self : this, function () {
-  'use strict';
-
   var BRISBANE_TZ = 'Australia/Brisbane';
 
   var partsFormatter = new Intl.DateTimeFormat('en-AU', {
@@ -126,15 +117,14 @@
     return new Intl.DateTimeFormat('en-AU', fmt).format(noonUTC);
   }
 
-  return {
-    BRISBANE_TZ: BRISBANE_TZ,
-    getBrisbaneParts: getBrisbaneParts,
-    brisbaneDateISO: brisbaneDateISO,
-    brisbaneTimeHM: brisbaneTimeHM,
-    brisbaneBusinessDate: brisbaneBusinessDate,
-    isBrisbaneToday: isBrisbaneToday,
-    daysBetween: daysBetween,
-    addDays: addDays,
-    formatBrisbaneDate: formatBrisbaneDate
+  export {
+    BRISBANE_TZ,
+    getBrisbaneParts,
+    brisbaneDateISO,
+    brisbaneTimeHM,
+    brisbaneBusinessDate,
+    isBrisbaneToday,
+    daysBetween,
+    addDays,
+    formatBrisbaneDate,
   };
-});

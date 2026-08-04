@@ -1,0 +1,10 @@
+{
+  "name": "Tropicool Treats Stocktake",
+  "short_name": "TT Stocktake",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FAF9FC",
+  "theme_color": "#6C4BD6",
+  "orientation": "portrait-primary",
+  "icons": []
+}
