@@ -13,8 +13,8 @@ been deployed, and no production Supabase migration has been run.
 
 - [x] Phase 0 — Audit + project scaffold
 - [x] Phase 1 — Brisbane business-date module (`js/date.js`) + tests
-- [ ] Phase 2 — Data-model design (stocktake sessions, stock movements, store
-      partitioning) — proposed migrations only
+- [x] Phase 2 — Data-model design (stocktake sessions, stock movements, store
+      partitioning) — proposed migrations only, see `DATA_MODEL.md`
 - [ ] Phase 3 — RLS + auth hardening proposals
 - [ ] Phase 4 — Information architecture + mobile counting UI
 - [ ] Phase 5 — Error prevention / anomaly confirmation / archive-not-delete
@@ -31,6 +31,7 @@ been deployed, and no production Supabase migration has been run.
 ```
 tropicool-stocktake-upgraded/
   AUDIT.md                 audit + implementation plan (start here)
+  DATA_MODEL.md              Phase 2 schema design, rationale, open questions
   index.html                app shell (pending — Phase 4)
   css/app.css                styles (pending — Phase 4, migrated from original)
   js/
@@ -46,7 +47,9 @@ tropicool-stocktake-upgraded/
   service-worker.js         offline app shell (pending — Phase 11)
   manifest.webmanifest       installable PWA manifest (pending — Phase 11)
   supabase/
-    migrations/               proposed SQL migrations (not run against production)
+    migrations/               proposed SQL migrations (not run against production;
+                                 0001-0004 verified to apply cleanly against a
+                                 throwaway local Postgres 16, see DATA_MODEL.md)
     functions/                  proposed Edge Function source (not deployed)
   tests/
     date.test.js               Brisbane date tests (done, 16 passing)
