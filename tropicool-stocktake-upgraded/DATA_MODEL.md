@@ -98,17 +98,15 @@ The rough shape it would take, for review when we get there:
 4. Everything in `AUDIT.md` §11 (RLS policies today, what `verify-staff-pin`
    actually does, what writes `tt_staff_working`/`tt_roster`) still applies
    and is unresolved.
-5. **Supplier identity: free text vs. the `suppliers` table.** `0001` gives
-   `store_inventory` a `supplier_id` FK into `suppliers`, but Phase 6's
-   mock/UI layer (`items.js`, `mock-data.js`) added a plain `supplierName`
-   text field on `store_inventory` instead of linking it, and Phase 7's
-   ordering workflow (`0007_purchase_orders.sql`) groups and snapshots
-   orders by that free-text name for the same reason — it's what the mock
-   layer actually has. This is fine for demonstrating the workflow, but
-   before `0001`/`0007` are finalised for real, decide whether supplier
-   records should be normalised (proper `suppliers` rows, `supplier_id`
-   used throughout) or whether free text is acceptable long-term for a
-   3-store business. Flagging rather than guessing, same as point 1.
+5. ~~**Supplier identity: free text vs. the `suppliers` table.**~~ **Resolved
+   (Phase 13, real Supabase wiring): free text.** Confirmed with the
+   business owner — `0009_wiring_gaps.sql` adds `supplier_name`,
+   `supplier_pack_unit`, and `pack_conversion` directly on
+   `store_inventory`, matching what `items.js`/`orders.js` already do end
+   to end. The `suppliers` table and `store_inventory.supplier_id` FK stay
+   in the schema for a possible future normalisation but are unused by the
+   client; `item_master.supplier_pack_unit`/`pack_conversion` are marked
+   deprecated in favour of the per-store columns rather than dropped.
 
 ## What's intentionally not in this migration set
 

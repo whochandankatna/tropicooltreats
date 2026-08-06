@@ -63,6 +63,10 @@ export const SESSION_STORAGE_KEY = 'tt_session_v2';
 export const DRAFT_STORAGE_PREFIX = 'tt_draft_v2_';
 export const CONFLICT_STORAGE_PREFIX = 'tt_conflicts_v1_';
 export const CLIENT_REF_KEY = 'tt_client_ref';
+/** Real-backend only (AUTH_MODEL.md "Client wiring") — the JWT minted by
+ * the verify-staff-pin Edge Function, read by supabase-client.js's
+ * accessToken callback on every request. Unused in mock mode. */
+export const ACCESS_TOKEN_STORAGE_KEY = 'tt_session_token';
 
 // ---- Cash count redesign (Priority 9) --------------------------------------------
 // Australian coins/notes currently in circulation (1c/2c were withdrawn in

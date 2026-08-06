@@ -55,13 +55,26 @@ tropicool-stocktake-upgraded/
                                now a plain ES module (was UMD in Phase 1;
                                converted so the browser and Node tests share
                                literally the same file, see package.json)
-    config.js                stores, categories, unit-aware step sizes
+    config.js                stores, categories, unit-aware step sizes,
+                                SUPABASE_URL/ANON_KEY (blank = mock mode)
     pin-hash.js               browser-side twin of the Edge Function's
                                  hash.ts, used ONLY by the mock auth below
     mock-data.js               in-memory seed data (see "Mock data" below)
-    database.js                 data-access layer — every function is async
-                                   and shaped like the real Supabase calls
-                                   will be, currently backed by mock-data.js
+    database.js                 backend switch — re-exports whichever of
+                                   the two below applies based on
+                                   config.js's SUPABASE_URL (Phase 13)
+    database.mock.js              in-memory backend, backed by mock-data.js
+    database.supabase.js            real Postgres + RLS backend (Phase 13,
+                                       see "Wiring to real Supabase" below)
+    supabase-client.js                creates the real backend's
+                                         supabase-js client (accessToken ->
+                                         sessionStorage JWT, see AUTH_MODEL.md)
+    vendor/supabase-js.esm.js           @supabase/supabase-js, vendored as a
+                                           single pre-bundled ESM file (see
+                                           `npm run build:vendor`) so the
+                                           real backend never needs a CDN
+                                           import — keeps the offline app-
+                                           shell guarantee (Phase 11) intact
     auth.js                      PIN keypad UI + sessionStorage session
     ui.js                         escaping, toasts (aria-live), accessible
                                      modal (focus trap + focus return), icons
@@ -82,19 +95,29 @@ tropicool-stocktake-upgraded/
     app.js                                   entry point, wires it all up
   supabase/
     migrations/               proposed SQL migrations (not run against production;
-                                 0001-0008 verified to apply cleanly against a
+                                 0001-0009 verified to apply cleanly against a
                                  throwaway local Postgres 16, see DATA_MODEL.md
-                                 and AUTH_MODEL.md)
+                                 and AUTH_MODEL.md — 0009 closes gaps found
+                                 while wiring database.supabase.js, Phase 13)
     functions/
       _shared/                   hash.ts (PBKDF2 PIN hashing), jwt.ts (HS256
                                     session tokens), cors.ts — no external deps,
                                     tested in tests/hash_and_jwt.test.mjs
-      verify-staff-pin/          PIN check + rate limiting + session mint (not deployed)
-      set-staff-pin/             manager-only PIN reset/role/lock (not deployed)
+      verify-staff-pin/          PIN check + rate limiting + session mint —
+                                    called for real by database.supabase.js
+                                    once SUPABASE_URL is set (still needs
+                                    deploying to a real Supabase project)
+      set-staff-pin/             manager-only PIN reset/role/lock — written,
+                                    reviewed, but no UI calls it yet (staff.js
+                                    shows this honestly rather than faking it)
   tests/
-    date.test.js               Brisbane date tests (16 passing)
+    date.test.js               Brisbane date tests (17 passing)
     hash_and_jwt.test.mjs        PIN hashing + JWT signing/verification tests (8 passing)
-    sql/_local_auth_stub.sql       test-only harness simulating auth.jwt() locally
+    sql/
+      _local_auth_stub.sql        test-only harness simulating auth.jwt() locally
+      test_cash_rls.sql             cash_counts RLS scenarios (Phase 3/9)
+      test_po_rls.sql                purchase_orders/lines RLS scenarios (Phase 3/7)
+    e2e/                        Playwright suite, Phases 4-11 (see "Running tests")
 ```
 
 ## Running the app (Phase 4)
@@ -708,8 +731,95 @@ cleanup pass.
 This completes all 12 phases of the working plan in `AUDIT.md` §12. The
 `tropicool-stocktake_9.html` original at the repo root was never modified
 at any point in this project, and no database or deployment changes were
-made — see "Why isn't this deployed" below for what still needs sign-off
-before any of this touches production.
+made — see "Wiring to real Supabase" below for what still needs your
+explicit sign-off before any of this touches production.
+
+### Phase 13 — wiring to real Supabase
+
+Everything through Phase 12 ran against `database.mock.js`'s in-memory
+data. This phase writes the real backend (`database.supabase.js`) that
+`database.js` switches to the moment `config.js`'s `SUPABASE_URL` is
+filled in — see "Wiring to real Supabase" below for the full picture and
+the steps still needed before that actually happens.
+
+Three real gaps surfaced by reading the reviewed migrations against what
+the tested UI actually does, before writing a line of the real backend —
+each is a small additive migration (`0009_wiring_gaps.sql`), not a rewrite
+of 0001-0008:
+
+1. **Supplier identity** (`DATA_MODEL.md` "Open questions" #5, explicitly
+   deferred to you back in Phase 2): confirmed as free text. `0001` gave
+   `store_inventory` a `supplier_id` FK into `suppliers`, but the tested
+   UI (`items.js`, Phases 6-7) always used a plain `supplier_name` string
+   instead. Resolved by adding `supplier_name`/`supplier_pack_unit`/
+   `pack_conversion` directly to `store_inventory` rather than reworking
+   the add/edit-item forms to do a suppliers-table lookup nobody built or
+   tested. `item_master`'s copies of the pack fields are marked deprecated
+   rather than dropped (a store can source the same item differently than
+   another store, which a shared-identity column can't represent).
+2. **`audit_log` had no INSERT grant for any client role** (0002/0005 —
+   "written by triggers/Edge Functions only"), but only two actions
+   (`staff_signed_in`, `staff_pin_reset`/etc.) actually have Edge Functions
+   writing them; everything else `items.js`/`orders.js`/`cash.js` etc. do
+   (archive, waste, order sent, recount...) would silently never appear in
+   the audit log. Rather than write ~10 new Edge Functions or triggers this
+   phase, `0009` grants authenticated staff INSERT scoped to their own
+   `actor_id` and store — the same "client asserts who they are, RLS
+   checks they're not lying" pattern already used for `count_lines.staff_id`
+   and `stock_movements.staff_id`. Less tamper-resistant than a trigger,
+   flagged as a v1 tradeoff rather than silently presented as equivalent.
+3. **`announcements` and `roster_shifts` had no tables at all** — the
+   UI/mock layer modelled both from early on, but no migration ever added
+   them. `roster_shifts` stays read-only (nothing in this app writes
+   rosters — `roster.js` already says so honestly); `announcements` gets
+   real `staff_id`/`store_id` columns, which also meant updating
+   `postAnnouncement`'s signature (now `{storeId, message, staffId,
+   staffName}` in both backends, was a two-positional-argument call) and
+   its one call site in `announcements.js`.
+
+Also found while designing `archiveItem`/`getArchivedInventory`: the
+per-store "why was this archived" reason `items.js` displays
+(`archivedReason`) has nowhere to live in `0001` either — `item_master`
+has `archived_reason`, but that's the shared-identity item being retired
+chain-wide, not one store's decision to stop stocking it. `0009` adds
+`archived_reason`/`archived_at` to `store_inventory` too.
+
+**A subtler RLS-vs-UX interaction, worth documenting for whoever extends
+this**: `saveCashCount`'s friendly "already counted today by someone else,
+ask a manager" message relies on being able to see the existing row it's
+about to collide with — but `cash_counts_select`'s RLS policy (deliberately)
+only lets a non-manager see their *own* rows, so that pre-check can't see a
+colleague's still-current count at all. The fix isn't a looser SELECT
+policy (that would leak who counted what) — it's catching the Postgres
+unique-violation (`23505`) from the `cash_counts_one_current_per_slot`
+index when the blind INSERT collides with a row this caller could never
+see, and translating *that* into the same friendly message. Both paths
+(visible collision → pre-check message, invisible collision → constraint
+message) now produce identical wording, so the Phase 9 test suite's
+assertion holds against the real backend the same way it does against the
+mock — worth re-running for real once a project exists to confirm, per
+"Wiring to real Supabase" below.
+
+**Vendoring `@supabase/supabase-js`**: this app has no build step and the
+service worker only precaches same-origin requests (Phase 11), so
+importing the SDK from a CDN would silently break the "app shell loads
+offline" guarantee the moment it's turned on. `js/vendor/supabase-js.esm.js`
+is a single pre-bundled ESM file (esbuild, `npm run build:vendor`) checked
+into the repo instead — same-origin, precached like every other `js/*.js`
+file, regenerated only when the SDK version in `package.json` changes.
+
+Verified in this phase: every new/changed file syntax-checks cleanly, a
+fresh ESLint sweep (same scratch config as Phase 12) is still zero
+warnings, and the full Phase 4-11 Playwright suite plus all 25 unit tests
+were re-run end to end against mock mode (still the active backend —
+`SUPABASE_URL` stays blank) to confirm the `database.js` backend-switch
+refactor (including its top-level `await import(...)`, verified to work in
+a real browser via a manual smoke check) didn't change anything observable
+about the running app. The real backend itself (`database.supabase.js`)
+has not been exercised against an actual Postgres instance — there is no
+real Supabase project to point it at yet, and per this project's working
+rules, standing one up or running the migrations happens on your explicit
+go-ahead, not this session's initiative.
 
 ## Running tests
 
@@ -759,10 +869,70 @@ once a real Supabase project (or the `supabase` CLI's local dev stack) is
 available to run migrations against directly rather than the hand-built
 stub. Never run these against a real database.
 
-## Why isn't this deployed / connected to Supabase yet?
+## Wiring to real Supabase (Phase 13)
+
+`js/database.supabase.js` is a complete, real implementation of every
+function `js/database.js` exposes — same inputs/outputs as
+`js/database.mock.js`, but backed by actual Postgres calls through
+`supabase-js` (`js/supabase-client.js`), authorized by the RLS policies in
+`supabase/migrations/`, with PIN sign-in going through the real
+`verify-staff-pin` Edge Function and storing its JWT for every later
+request (`AUTH_MODEL.md` "Client wiring"). None of it has touched a real
+database — `config.js`'s `SUPABASE_URL`/`SUPABASE_ANON_KEY` are still
+blank, so `database.js` still resolves to the mock backend, and everything
+in this README's "What was actually verified" sections was run against
+that mock. Turning it on for real, once you have a Supabase project ready,
+is:
+
+1. **Run the migrations, in order, 0001 through 0009.** Review each one
+   first — they're written to be read, not rubber-stamped (see
+   `DATA_MODEL.md`/`AUTH_MODEL.md` for the open design questions already
+   resolved, and any still open). `0009_wiring_gaps.sql` is the one written
+   during this wiring pass specifically — it adds `supplier_name`/
+   `supplier_pack_unit`/`pack_conversion`/`archived_reason`/`archived_at`
+   to `store_inventory`, an `announcements` table, a `roster_shifts` table,
+   and a client-attributed `audit_log` INSERT policy. None of this has been
+   run against your project by this session — you run it (via the
+   `supabase` CLI, or by hand in the SQL editor) when you're ready.
+2. **Deploy the two Edge Functions** (`supabase/functions/verify-staff-pin`,
+   `set-staff-pin`) and set the `SUPABASE_JWT_SECRET` env var on the
+   project to its real JWT secret (Project Settings → API) — see the
+   comment at the top of `verify-staff-pin/index.ts`.
+3. **Seed real stores/staff/items** — `mock-data.js`'s fake catalogue and
+   demo PINs don't carry over; this is real data entry (or a one-off
+   import script), not something this session can generate for you.
+4. **Fill in `config.js`'s `SUPABASE_URL`/`SUPABASE_ANON_KEY`** with your
+   project's values (the anon key is safe to ship client-side — Supabase's
+   own model, protected entirely by the RLS policies from step 1). The
+   moment `SUPABASE_URL` is non-blank, `database.js` switches to
+   `database.supabase.js` on the next page load — no other code change.
+5. **Re-run the full test suite against the real backend** (`npm run
+   test:e2e`, `npm run test:a11y`) before trusting it — the suite was only
+   ever run against the mock so far, and a live Postgres/RLS backend can
+   surface timing, permission, or constraint behaviour a same-process
+   in-memory mock can't.
+6. **Deploy the static app** (any static host — Netlify, Vercel, Cloudflare
+   Pages, your own server; HTTPS is required for the service worker to
+   register at all) and decide the cutover from `tropicool-stocktake_9.html`
+   (redirect, replace, or run both for a transition period) — a separate,
+   explicit step from all of the above, not implied by it.
+
+If `@supabase/supabase-js` is ever upgraded, regenerate the vendored bundle
+with `npm run build:vendor` after bumping the version in `package.json` —
+see `js/supabase-client.js`'s top comment for why it's vendored locally
+rather than imported from a CDN.
+
+## Why isn't any of this deployed yet?
 
 Per the working rules for this project: no production database changes, no
-deployment, and no external actions happen without explicit approval. Each
-phase's migrations and Edge Functions are written for review under
-`supabase/`, not run. See AUDIT.md §13 for the full list of changes that
-need sign-off before they touch production.
+deployment, and no external actions happen without explicit approval. Every
+migration (including 0009 above) and both Edge Functions are written for
+review under `supabase/`, not run — and the real backend code in
+`database.supabase.js` has only ever been exercised by hand-verifying it
+imports and syntax-checks cleanly plus a full mock-mode regression (see
+above), never against an actual Postgres instance, because doing that would
+mean either running the proposed migrations somewhere or fabricating a
+"real" project — both of which are exactly the kind of external action this
+project's rules require your explicit go-ahead for. See AUDIT.md §13 for
+the full list of changes that need sign-off before anything here touches
+production.

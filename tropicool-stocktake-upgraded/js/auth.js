@@ -1,11 +1,16 @@
 /**
- * Session state + PIN entry UI. In a real deployment, `verifyStaffPin` in
- * database.js calls the verify-staff-pin Edge Function and this module
- * stores the returned session JWT (see AUTH_MODEL.md "Client wiring") —
- * today it stores the mock `{ok, staff}` result from the in-memory layer.
- * Either way, the session shape held here (staff id/name/role/store) and
- * sessionStorage-based persistence (clears on tab close, deliberately —
- * see AUTH_MODEL.md "Session storage choice") don't change.
+ * Session state + PIN entry UI. `verifyStaffPin` (database.js, backed by
+ * either database.mock.js or database.supabase.js) returns the same
+ * `{ok, staff}` shape either way, which is all this module ever touches —
+ * in real-backend mode, database.supabase.js's verifyStaffPin also stores
+ * the session JWT it gets back from the verify-staff-pin Edge Function
+ * directly into sessionStorage (see AUTH_MODEL.md "Client wiring",
+ * config.js's ACCESS_TOKEN_STORAGE_KEY), for supabase-client.js's
+ * accessToken callback to pick up on every later request — this module
+ * never sees or handles that token itself. Either way, the session shape
+ * held here (staff id/name/role/store) and sessionStorage-based
+ * persistence (clears on tab close, deliberately — see AUTH_MODEL.md
+ * "Session storage choice") don't change.
  */
 import { verifyStaffPin } from './database.js';
 import { SESSION_STORAGE_KEY, STORES } from './config.js';

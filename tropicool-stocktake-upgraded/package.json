@@ -6,10 +6,15 @@
   "scripts": {
     "test": "node --test tests/date.test.js && node --experimental-strip-types --test tests/hash_and_jwt.test.mjs",
     "test:e2e": "node tests/e2e/phase04_breakpoints.mjs && node tests/e2e/phase05_error_prevention.mjs && node tests/e2e/phase06_batches_multistore.mjs && node tests/e2e/phase07_ordering.mjs && node tests/e2e/phase08_reports.mjs && node tests/e2e/phase09_cash.mjs && node tests/e2e/phase11_offline_pwa.mjs",
-    "test:a11y": "node tests/e2e/phase10_accessibility.mjs"
+    "test:a11y": "node tests/e2e/phase10_accessibility.mjs",
+    "build:vendor": "esbuild js/vendor/_entry.mjs --bundle --format=esm --minify --platform=browser --outfile=js/vendor/supabase-js.esm.js"
   },
   "devDependencies": {
     "axe-core": "4.12.1",
+    "esbuild": "^0.28.1",
     "playwright": "1.56.1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.1"
   }
 }

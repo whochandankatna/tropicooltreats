@@ -20,7 +20,7 @@ export async function renderAnnouncements(root, storeId) {
     const text = root.querySelector('#ttAnnounceText');
     const message = text.value.trim();
     if (!message) { toast('Write something first', { error: true }); return; }
-    await db.postAnnouncement(message, sess.name);
+    await db.postAnnouncement({ storeId, message, staffId: sess.staffId, staffName: sess.name });
     toast('Posted');
     renderAnnouncements(root, storeId);
   });

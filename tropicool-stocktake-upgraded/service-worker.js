@@ -1,17 +1,24 @@
 /**
- * App-shell service worker (Priority 11). This app has no real backend yet
- * (SUPABASE_URL is blank — see config.js/database.js) so there is no live
- * data to sync from a service worker; what "offline" means today is
- * narrower and more honest than a full offline-first data sync: the app
- * shell (HTML/CSS/JS) precaches on install so the app still LAUNCHES and
- * is fully usable offline, and the mock data layer + Phase 11's
- * draft/queue/conflict handling in stocktake.js take it from there.
+ * App-shell service worker (Priority 11). The app shell (HTML/CSS/JS)
+ * precaches on install so the app still LAUNCHES and is fully usable
+ * offline — that holds regardless of which data backend is active
+ * (config.js's SUPABASE_URL). What differs is what "usable" means once
+ * launched: in mock mode (SUPABASE_URL blank) all data is in-memory, so a
+ * fully offline session works end to end; once pointed at a real Supabase
+ * project, data reads/writes need network same as any real backend, and
+ * Phase 11's draft/queue/conflict handling in stocktake.js is what carries
+ * counting specifically through a real connectivity drop — this service
+ * worker only ever covers the shell loading, never the data behind it.
+ *
+ * js/vendor/supabase-js.esm.js is precached for the same reason as every
+ * other same-origin JS file here — see supabase-client.js's top comment
+ * for why it's vendored locally rather than imported from a CDN.
  *
  * Bump CACHE_VERSION whenever a precached file changes — the activate
  * handler deletes any cache from a previous version, so a stale service
  * worker never keeps serving old code to a returning visitor.
  */
-const CACHE_VERSION = 'tt-shell-v1';
+const CACHE_VERSION = 'tt-shell-v2';
 
 const PRECACHE_URLS = [
   './',
@@ -26,6 +33,8 @@ const PRECACHE_URLS = [
   './js/config.js',
   './js/connectivity.js',
   './js/database.js',
+  './js/database.mock.js',
+  './js/database.supabase.js',
   './js/date.js',
   './js/home.js',
   './js/items.js',
@@ -39,7 +48,9 @@ const PRECACHE_URLS = [
   './js/roster.js',
   './js/staff.js',
   './js/stocktake.js',
+  './js/supabase-client.js',
   './js/ui.js',
+  './js/vendor/supabase-js.esm.js',
 ];
 
 self.addEventListener('install', (event) => {
