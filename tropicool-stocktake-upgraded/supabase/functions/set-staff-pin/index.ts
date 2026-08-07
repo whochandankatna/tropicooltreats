@@ -19,7 +19,9 @@ import { corsHeaders } from '../_shared/cors.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const JWT_SECRET = Deno.env.get('SUPABASE_JWT_SECRET')!;
+// TT_JWT_SECRET, not SUPABASE_JWT_SECRET -- see verify-staff-pin/index.ts's
+// comment on why (the CLI rejects secret names starting with SUPABASE_).
+const JWT_SECRET = Deno.env.get('TT_JWT_SECRET')!;
 
 function json(body: unknown, status: number, origin: string | null) {
   return new Response(JSON.stringify(body), {

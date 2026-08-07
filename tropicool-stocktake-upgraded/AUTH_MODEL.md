@@ -107,9 +107,14 @@ proposed, neither implemented yet:
 
 ## Required manual setup before this could be deployed (not done, needs your approval)
 
-1. Set the `SUPABASE_JWT_SECRET` Edge Function secret to the project's real
-   JWT secret (Project Settings → API → JWT Secret) — not auto-injected by
-   Supabase the way `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` are.
+1. Set the `TT_JWT_SECRET` Edge Function secret (`supabase secrets set
+   TT_JWT_SECRET=...`) to the project's real JWT secret (Project Settings
+   → API → JWT Secret) — not auto-injected by Supabase the way
+   `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` are. Named `TT_JWT_SECRET`
+   rather than `SUPABASE_JWT_SECRET` because the CLI now rejects any
+   secret name starting with `SUPABASE_` (reserved for the platform's own
+   auto-injected values) — found the hard way when actually deploying
+   this in Phase 13.
 2. Tighten `_shared/cors.ts`'s `Access-Control-Allow-Origin` from the
    current wildcard to the real deployed app origin once that's known.
 3. Every existing staff member needs a PIN re-entered through

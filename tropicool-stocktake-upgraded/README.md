@@ -895,9 +895,11 @@ is:
    run against your project by this session — you run it (via the
    `supabase` CLI, or by hand in the SQL editor) when you're ready.
 2. **Deploy the two Edge Functions** (`supabase/functions/verify-staff-pin`,
-   `set-staff-pin`) and set the `SUPABASE_JWT_SECRET` env var on the
-   project to its real JWT secret (Project Settings → API) — see the
-   comment at the top of `verify-staff-pin/index.ts`.
+   `set-staff-pin`) and set the `TT_JWT_SECRET` env var (`supabase secrets
+   set TT_JWT_SECRET=...`) on the project to its real JWT secret (Project
+   Settings → API) — see the comment at the top of `verify-staff-pin/index.ts`.
+   Named `TT_JWT_SECRET`, not `SUPABASE_JWT_SECRET`: the CLI rejects any
+   secret name starting with `SUPABASE_`.
 3. **Seed real stores/staff/items** — `mock-data.js`'s fake catalogue and
    demo PINs don't carry over; this is real data entry (or a one-off
    import script), not something this session can generate for you.

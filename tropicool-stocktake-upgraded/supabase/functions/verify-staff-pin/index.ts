@@ -17,7 +17,11 @@ import { corsHeaders } from '../_shared/cors.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const JWT_SECRET = Deno.env.get('SUPABASE_JWT_SECRET')!; // must be set manually -- see AUTH_MODEL.md
+// Named TT_JWT_SECRET (not SUPABASE_JWT_SECRET) because `supabase secrets
+// set` rejects any name starting with SUPABASE_ -- that prefix is reserved
+// for the platform's own auto-injected values. Must be set manually to the
+// project's real JWT secret -- see AUTH_MODEL.md.
+const JWT_SECRET = Deno.env.get('TT_JWT_SECRET')!;
 
 // Rate limiting thresholds. Tuned for a shared shop device where a handful
 // of genuine mistyped PINs per shift is normal, but 4-digit brute forcing

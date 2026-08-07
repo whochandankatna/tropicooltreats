@@ -5,9 +5,11 @@
 //
 // This implements Supabase's documented "custom JWT" pattern: sign a token
 // with the project's JWT secret (Project Settings -> API -> JWT Secret,
-// must be set as the SUPABASE_JWT_SECRET env var for this function --
-// that's a manual one-time setup step, not something this code can read
-// automatically) carrying `role: 'authenticated'` plus whatever custom
+// must be set as the TT_JWT_SECRET env var for this function -- not
+// SUPABASE_JWT_SECRET, since `supabase secrets set` rejects any name
+// starting with SUPABASE_ -- that's a manual one-time setup step, not
+// something this code can read automatically) carrying `role:
+// 'authenticated'` plus whatever custom
 // claims you want. PostgREST and Realtime both accept it exactly like a
 // GoTrue-issued token, and RLS policies read the custom claims via
 // auth.jwt()->>'claim_name'. See ../../AUTH_MODEL.md.
