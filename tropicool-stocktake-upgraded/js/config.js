@@ -1,13 +1,13 @@
 /**
  * Shared constants. No secrets live here — the Supabase anon key is safe to
- * ship in frontend code (Supabase's own model), but this project isn't
- * pointed at a real project yet (see DATA_MODEL.md / AUTH_MODEL.md), so
- * SUPABASE_URL/SUPABASE_ANON_KEY are left blank and database.js runs in
- * mock mode until they're filled in as part of an explicitly approved
- * deployment step.
+ * ship in frontend code (Supabase's own model); real authorization is
+ * enforced entirely by the RLS policies in supabase/migrations/, not by
+ * keeping this key private. Set for real in Phase 13 (see README.md
+ * "Wiring to real Supabase") — database.js now resolves to
+ * database.supabase.js instead of the mock backend.
  */
-export const SUPABASE_URL = '';
-export const SUPABASE_ANON_KEY = '';
+export const SUPABASE_URL = 'https://nmgnliaglzozbfdejvtu.supabase.co';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZ25saWFnbHpvemJmZGVqdnR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MzkzMDQsImV4cCI6MjEwMDIxNTMwNH0.QROMsk0ZUfbbW6OL_rxi5OcXAMcJMBAQdYh2G0ueQy4';
 
 export const STORES = [
   { id: 'store_mooloolaba', slug: 'mooloolaba', name: 'Mooloolaba' },
