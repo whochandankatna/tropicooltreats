@@ -13,7 +13,7 @@ const browser = await launchBrowser();
 {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', (e) => console.log('PAGEERROR add-item', e.message));
-  await signIn(page, 'store_mooloolaba', '2222'); // Bob, manager
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222'); // Bob, manager
   await goToItems(page);
   await page.click('#ttAddItemBtn');
   await page.waitForSelector('.tt-modal-overlay.show');
@@ -59,7 +59,7 @@ const browser = await launchBrowser();
   page.on('pageerror', (e) => console.log('PAGEERROR batches', e.message));
   let nativeDialogFired = false;
   page.on('dialog', async (d) => { nativeDialogFired = true; await d.dismiss(); });
-  await signIn(page, 'store_mooloolaba', '2222');
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222');
   await goToItems(page);
   await page.fill('#ttItemSearch', 'Oat Milk');
   await page.waitForTimeout(150);
@@ -105,21 +105,24 @@ const browser = await launchBrowser();
   await page.close();
 }
 
-// 3. Multi-store isolation: Noosa manager sees only Noosa's 4 seeded items
+// 3. Multi-store isolation: Sunnybank manager sees only Sunnybank's 4 seeded items
 {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-  page.on('pageerror', (e) => console.log('PAGEERROR noosa', e.message));
-  await signIn(page, 'store_noosa', '4444'); // Deepak Rao, Noosa manager
+  page.on('pageerror', (e) => console.log('PAGEERROR sunnybank', e.message));
+  // Sunnybank's real stores.id (config.js's STORES is the single source of
+  // truth for both mock and real-backend mode, see Phase 13) -- Deepak Rao,
+  // Sunnybank manager.
+  await signIn(page, 'b27792bd-9d5e-4aba-8561-a830d3e6589e', '4444');
   await goToItems(page);
   await page.waitForTimeout(200);
-  check('Noosa shows exactly its 4 seeded items', await page.locator('.tt-item-card').count() === 4);
+  check('Sunnybank shows exactly its 4 seeded items', await page.locator('.tt-item-card').count() === 4);
   const allText = await page.locator('.tt-item-cards').innerText();
-  check('Noosa item list does not include Mooloolaba-only item (Crushed Nuts)', !/Crushed Nuts/.test(allText));
-  check('Noosa item list includes its own seeded item (Waffle Cones)', /Waffle Cones/.test(allText));
+  check('Sunnybank item list does not include Mooloolaba-only item (Crushed Nuts)', !/Crushed Nuts/.test(allText));
+  check('Sunnybank item list includes its own seeded item (Waffle Cones)', /Waffle Cones/.test(allText));
 
   await page.fill('#ttItemSearch', 'Ripple');
   await page.waitForTimeout(150);
-  check('Mooloolaba-only new item not visible at Noosa', /No items match/.test(await page.locator('.tt-item-cards').innerText()));
+  check('Mooloolaba-only new item not visible at Sunnybank', /No items match/.test(await page.locator('.tt-item-cards').innerText()));
 
   await page.close();
 }

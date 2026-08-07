@@ -55,7 +55,7 @@ const browser = await launchBrowser();
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   page.on('pageerror', (e) => console.log('PAGEERROR sync-pill', e.message));
-  await signIn(page, 'store_mooloolaba', '2222');
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222');
   check('sync pill shows Live while online', (await page.locator('#ttSyncPill').textContent()).includes('Live'));
 
   await context.setOffline(true);
@@ -73,7 +73,7 @@ const browser = await launchBrowser();
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   page.on('pageerror', (e) => console.log('PAGEERROR offline-queue', e.message));
-  await signIn(page, 'store_mooloolaba', '2222');
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222');
   await goToCount(page);
 
   await context.setOffline(true);
@@ -100,7 +100,7 @@ const browser = await launchBrowser();
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   page.on('pageerror', (e) => console.log('PAGEERROR home-banner', e.message));
-  await signIn(page, 'store_mooloolaba', '2222');
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222');
   await goToCount(page);
   await context.setOffline(true);
   await page.waitForTimeout(200);
@@ -131,7 +131,7 @@ const browser = await launchBrowser();
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   page.on('pageerror', (e) => console.log('PAGEERROR review-offline', e.message));
-  await signIn(page, 'store_mooloolaba', '2222');
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222');
   await goToCount(page);
   await context.setOffline(true);
   await page.waitForTimeout(200);
@@ -155,7 +155,7 @@ const browser = await launchBrowser();
   page.on('pageerror', (e) => console.log('PAGEERROR conflict-flow', e.message));
 
   // Alice, offline, queues Full Cream Milk = 20
-  await signIn(page, 'store_mooloolaba', '1111');
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '1111');
   await goToCount(page);
   await context.setOffline(true);
   await page.waitForTimeout(200);

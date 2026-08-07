@@ -20,7 +20,7 @@ function uid(prefix) {
 }
 
 const MOO = STORES[0].id;
-const NOOSA = STORES[1].id;
+const SUNNYBANK = STORES[1].id;
 
 const itemSeed = [
   { name: 'Vanilla Gelato Base', category: 'premix', unit: 'tubs', par: 4, max: 14, stock: 9, important: true, criticalItem: true,
@@ -56,7 +56,7 @@ const itemSeed = [
 // Mooloolaba's — it exists so multi-store isolation (Priority 6: "every
 // relevant query... must include the store ID") can actually be exercised
 // end to end, not just asserted true because the code looks right.
-const noosaItemSeed = [
+const sunnybankItemSeed = [
   { name: 'Vanilla Gelato Base', category: 'premix', unit: 'tubs', par: 3, max: 10, stock: 6, important: true, criticalItem: true, unitCost: 18.5 },
   { name: 'Frozen Mango', category: 'frozenfruit', unit: 'kg', par: 4, max: 16, stock: 3, unitCost: 5.9 },
   { name: 'Waffle Cones', category: 'packaging', unit: 'boxes', par: 2, max: 8, stock: 1 },
@@ -66,7 +66,7 @@ const noosaItemSeed = [
 /**
  * Builds item_master + store_inventory + item_batches rows for one store
  * from a seed list. Each store gets its own item_master rows (matching
- * "Mango Gelato Base" at Mooloolaba and at Noosa being independently
+ * "Mango Gelato Base" at Mooloolaba and at Sunnybank being independently
  * archivable/editable) even where the name is the same — item_master
  * sharing an identity across stores is a real option in the schema
  * (DATA_MODEL.md) but isn't necessary for the mock layer to demonstrate
@@ -134,16 +134,16 @@ export async function seedMockData() {
   const today = brisbaneDateISO();
 
   const moo = buildStoreCatalogue(MOO, itemSeed, today);
-  const noosa = buildStoreCatalogue(NOOSA, noosaItemSeed, today);
-  const items = [...moo.items, ...noosa.items];
-  const storeInventory = [...moo.storeInventory, ...noosa.storeInventory];
-  const batches = [...moo.batches, ...noosa.batches];
+  const sunnybank = buildStoreCatalogue(SUNNYBANK, sunnybankItemSeed, today);
+  const items = [...moo.items, ...sunnybank.items];
+  const storeInventory = [...moo.storeInventory, ...sunnybank.storeInventory];
+  const batches = [...moo.batches, ...sunnybank.batches];
 
   const staff = [
     { id: uid('staff'), storeId: MOO, name: 'Alice Nguyen', role: 'staff', pin: '1111' },
     { id: uid('staff'), storeId: MOO, name: 'Bob Ferreira', role: 'manager', pin: '2222' },
     { id: uid('staff'), storeId: MOO, name: 'Chloe Sanders', role: 'staff', pin: '3333' },
-    { id: uid('staff'), storeId: NOOSA, name: 'Deepak Rao', role: 'manager', pin: '4444' },
+    { id: uid('staff'), storeId: SUNNYBANK, name: 'Deepak Rao', role: 'manager', pin: '4444' },
   ];
   for (const s of staff) {
     s.pinHash = await hashPin(s.pin);

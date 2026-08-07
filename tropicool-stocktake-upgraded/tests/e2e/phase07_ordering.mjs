@@ -16,7 +16,7 @@ let dialogFired = false;
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', (e) => console.log('PAGEERROR order-create', e.message));
   page.on('dialog', async (d) => { dialogFired = true; await d.dismiss(); });
-  await signIn(page, 'store_mooloolaba', '2222'); // Bob, manager
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222'); // Bob, manager
   await goToOrders(page);
 
   check('needs-ordering panel is visible', await page.locator('.tt-order-header').isVisible());
@@ -43,7 +43,7 @@ let dialogFired = false;
 {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', (e) => console.log('PAGEERROR order-lifecycle', e.message));
-  await signIn(page, 'store_mooloolaba', '2222');
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222');
   await goToOrders(page);
 
   const beforeLine = page.locator('.tt-order-line-row', { hasText: 'Frozen Blueberries' });
@@ -95,7 +95,7 @@ let dialogFired = false;
 {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', (e) => console.log('PAGEERROR order-edit', e.message));
-  await signIn(page, 'store_mooloolaba', '2222');
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222');
   await goToOrders(page);
 
   const cupsLine = page.locator('.tt-order-line-row', { hasText: 'Cups (Regular)' });
@@ -138,7 +138,7 @@ let dialogFired = false;
   page.on('pageerror', (e) => console.log('PAGEERROR order-cancel', e.message));
   let nativeDialogFired = false;
   page.on('dialog', async (d) => { nativeDialogFired = true; await d.dismiss(); });
-  await signIn(page, 'store_mooloolaba', '2222');
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222');
   await goToOrders(page);
 
   const napkinsLine = page.locator('.tt-order-line-row', { hasText: 'Cups (Large)' });
@@ -165,7 +165,7 @@ let dialogFired = false;
 {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', (e) => console.log('PAGEERROR staff-view', e.message));
-  await signIn(page, 'store_mooloolaba', '1111'); // Alice, staff
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '1111'); // Alice, staff
   await goToOrders(page);
 
   check('staff sees no create-order buttons', await page.locator('[data-create-order]').count() === 0);

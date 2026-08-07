@@ -48,11 +48,11 @@ await page.goto(BASE);
 await page.waitForSelector('.tt-storepicker-btn');
 allViolations.push(...await runAxe('Store picker'));
 
-await page.click('[data-store="store_mooloolaba"]');
+await page.click('[data-store="a301889c-0a4e-41dc-bbc1-3e9366fdc07b"]');
 await page.waitForSelector('.tt-pin-keypad');
 allViolations.push(...await runAxe('PIN lock'));
 
-await signIn('store_mooloolaba', '2222'); // Bob, manager -- broadest UI visibility
+await signIn('a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222'); // Bob, manager -- broadest UI visibility
 await page.waitForTimeout(300);
 allViolations.push(...await runAxe('Home'));
 

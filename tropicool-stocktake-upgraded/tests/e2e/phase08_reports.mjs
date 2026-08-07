@@ -13,7 +13,7 @@ const browser = await launchBrowser();
 {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', (e) => console.log('PAGEERROR manager-tabs', e.message));
-  await signIn(page, 'store_mooloolaba', '2222'); // Bob, manager
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222'); // Bob, manager
   await goToReports(page);
 
   const tabLabels = await page.locator('.tt-report-tab').allTextContents();
@@ -32,7 +32,7 @@ const browser = await launchBrowser();
 {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', (e) => console.log('PAGEERROR staff-tabs', e.message));
-  await signIn(page, 'store_mooloolaba', '1111'); // Alice, staff
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '1111'); // Alice, staff
   await goToReports(page);
 
   const tabLabels = await page.locator('.tt-report-tab').allTextContents();
@@ -47,7 +47,7 @@ const browser = await launchBrowser();
 {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', (e) => console.log('PAGEERROR stocktake-report', e.message));
-  await signIn(page, 'store_mooloolaba', '2222');
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222');
   await goToReports(page);
 
   check('stocktake report table shows a row', await page.locator('.tt-report-table tbody tr').count() > 0);
@@ -78,7 +78,7 @@ const browser = await launchBrowser();
 {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', (e) => console.log('PAGEERROR tab-switch', e.message));
-  await signIn(page, 'store_mooloolaba', '2222');
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222');
   await goToReports(page);
 
   await page.click('[data-report="staff"]');
@@ -106,7 +106,7 @@ const browser = await launchBrowser();
 {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', (e) => console.log('PAGEERROR waste-orders', e.message));
-  await signIn(page, 'store_mooloolaba', '2222');
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222');
 
   await page.click('[data-tab="more"]:visible');
   await page.waitForSelector('.tt-more-menu');
@@ -149,7 +149,7 @@ const browser = await launchBrowser();
 {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', (e) => console.log('PAGEERROR audit', e.message));
-  await signIn(page, 'store_mooloolaba', '2222');
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222');
   await page.click('[data-tab="more"]:visible');
   await page.waitForSelector('.tt-more-menu');
   await page.click('[data-page="items"]');
@@ -173,7 +173,7 @@ const browser = await launchBrowser();
 {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', (e) => console.log('PAGEERROR print', e.message));
-  await signIn(page, 'store_mooloolaba', '2222');
+  await signIn(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', '2222');
   await goToReports(page);
   let printCalled = false;
   await page.exposeFunction('__ttPrintCalled', () => { printCalled = true; });

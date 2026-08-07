@@ -9,10 +9,15 @@
 export const SUPABASE_URL = 'https://nmgnliaglzozbfdejvtu.supabase.co';
 export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZ25saWFnbHpvemJmZGVqdnR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MzkzMDQsImV4cCI6MjEwMDIxNTMwNH0.QROMsk0ZUfbbW6OL_rxi5OcXAMcJMBAQdYh2G0ueQy4';
 
+// Real store rows (supabase/migrations/0001), seeded Phase 13 — `id` here
+// must be the actual stores.id UUID, not a slug or a made-up string:
+// app.js's store picker and auth.js's PIN-lock title both pass this id
+// straight through to verifyStaffPin, which (in real-backend mode) sends
+// it as store_id to the verify-staff-pin Edge Function and RLS's
+// has_store_access() checks it against stores.id directly.
 export const STORES = [
-  { id: 'store_mooloolaba', slug: 'mooloolaba', name: 'Mooloolaba' },
-  { id: 'store_noosa', slug: 'noosa', name: 'Noosa' },
-  { id: 'store_sunnybank', slug: 'sunnybank', name: 'Sunnybank' },
+  { id: 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', slug: 'mooloolaba', name: 'Mooloolaba' },
+  { id: 'b27792bd-9d5e-4aba-8561-a830d3e6589e', slug: 'sunnybank', name: 'Sunnybank' },
 ];
 
 export const MAIN_CATEGORIES = {

@@ -9,7 +9,7 @@ import { launchBrowser, makeCheck, reportAndExit, signIn as signInStore, signOut
 
 const check = makeCheck();
 const browser = await launchBrowser();
-const signIn = (page, pin) => signInStore(page, 'store_mooloolaba', pin);
+const signIn = (page, pin) => signInStore(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', pin);
 
 async function fillDenoms(page, counts) {
   for (const [key, qty] of Object.entries(counts)) {

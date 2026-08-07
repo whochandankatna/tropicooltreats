@@ -8,7 +8,7 @@ import { BASE, launchBrowser, makeCheck, reportAndExit, signIn as signInStore, g
 
 const check = makeCheck();
 const browser = await launchBrowser();
-const signIn = (page, pin) => signInStore(page, 'store_mooloolaba', pin);
+const signIn = (page, pin) => signInStore(page, 'a301889c-0a4e-41dc-bbc1-3e9366fdc07b', pin);
 
 // 1. Duplicate item name rejected
 {

@@ -43,7 +43,7 @@ for (const bp of breakpoints) {
   await page.waitForSelector('.tt-storepicker-btn');
   await page.screenshot({ path: `${OUT}/${bp.name}-01-storepicker.png` });
 
-  await page.click('[data-store="store_mooloolaba"]');
+  await page.click('[data-store="a301889c-0a4e-41dc-bbc1-3e9366fdc07b"]');
   await page.waitForSelector('.tt-pin-keypad');
   await page.screenshot({ path: `${OUT}/${bp.name}-02-pinlock.png` });
 
